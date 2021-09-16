@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31710.8
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpectatorGUI", "SpectatorGUI\SpectatorGUI.csproj", "{C0381391-3279-46B6-BFD9-305412041578}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C0381391-3279-46B6-BFD9-305412041578}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C0381391-3279-46B6-BFD9-305412041578}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C0381391-3279-46B6-BFD9-305412041578}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C0381391-3279-46B6-BFD9-305412041578}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BBECAAB4-CD94-402D-BB68-C60EC37661AA}
+	EndGlobalSection
+EndGlobal
