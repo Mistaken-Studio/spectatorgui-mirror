@@ -26,23 +26,25 @@ namespace Mistaken.SpectatorGUI
 
         public string SpectatorInfo { get; set; } = "You are spectator with <color=yellow>{0}</color> other players";
 
+        public string OnlySpectatorInfo { get; set; } = "You are <color=yellow>alone</color> spectator";
+
         public string PlayersInfo { get; set; } = "Server has <color=yellow>{0}</color> for max <color=yellow>{1}</color> players";
 
         public string DeadTimeInfo { get; set; } = "You are dead for <color=yellow>{0}</color>m <color=yellow>{1}</color>s";
 
-        public string GeneratorInfo { get; set; } = "Generatory: <color=yellow>{0}</color>/<color=yellow>5</color>";
+        public string GeneratorInfo { get; set; } = "Generators: <color=yellow>{0}</color>/<color=yellow>3</color>";
 
-        public string OverchargeInfo { get; set; } = "Rekontaminacja SCP 079 za <color=yellow>{0}</color>s";
+        public string OverchargeInfo { get; set; } = "SCP 079 status: {0}";
 
         public string AdminWarheadInfo { get; set; } = "Warhead status: {0}   |   Warhead Button Open: <color=yellow>{1}</color><br>Warhead Last Starter: <color=yellow>({2}) {3}</color>   |   <color=yellow>({4}) {5}</color> :Warhead Last Stoper<br>Warhead Lock Start: <color=yellow>{6}</color>   |   <color=yellow>{7}</color> :Warhead Lock Stop";
 
         public string AdminInfo { get; set; } = "{0}<br><size=50%>MTF Tickets: <color=yellow>{1}</color>   |   <color=yellow>{2}</color> :CI Tickets</size><br><size=50%>{3}</size>";
 
-        public string RecontainmentNotReady { get; set; } = "SCP 106 <color=yellow><b>nie</b> gotowy</color> do rekontaminacji";
+        public string RecontainmentNotReady { get; set; } = "SCP 106 <color=yellow><b>not</b> ready</color> for recontainment";
 
-        public string RecontainmentReady { get; set; } = "SCP 106 <color=yellow>gotowy</color> do rekontaminacji";
+        public string RecontainmentReady { get; set; } = "SCP 106 <color=yellow>ready</color> for recontainment";
 
-        public string RecontainmentContained { get; set; } = "SCP 106 <color=yellow>zabezpieczony</color>";
+        public string RecontainmentContained { get; set; } = "SCP 106 <color=yellow>recontained</color>";
 
         public string RespawnNone { get; set; } = "<color=#8f0000><b>None? will respawn</b></color> in <color=yellow>{0}</color>s";
 

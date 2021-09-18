@@ -8,6 +8,7 @@ using System;
 using Exiled.API.Enums;
 using Exiled.API.Features;
 using Exiled.API.Interfaces;
+using HarmonyLib;
 
 namespace Mistaken.SpectatorGUI
 {
@@ -33,6 +34,8 @@ namespace Mistaken.SpectatorGUI
         public override void OnEnabled()
         {
             Instance = this;
+
+            new Harmony("mistaken.spectatrgui").PatchAll();
 
             new SpecInfoHandler(this);
 

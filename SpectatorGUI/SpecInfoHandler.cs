@@ -43,37 +43,38 @@ namespace Mistaken.SpectatorGUI
                 ev.Player.SetGUI("specInfo", PseudoGUIPosition.MIDDLE, null);
         }
 
-        //private int RespawnQueueSeed = -1;
+        private int RespawnQueueSeed = -1;
+
         private void Server_RespawningTeam(Exiled.Events.EventArgs.RespawningTeamEventArgs ev)
         {
-            /*ev.ShuffleList = false;
-
-            if (Respawning.RespawnWaveGenerator.SpawnableTeams.TryGetValue(ev.NextKnownTeam, out Respawning.SpawnableTeam spawnableTeam) || ev.NextKnownTeam == Respawning.SpawnableTeamType.None)
+            if (Respawning.RespawnWaveGenerator.SpawnableTeams.TryGetValue(ev.NextKnownTeam, out var spawnableTeam) || ev.NextKnownTeam == Respawning.SpawnableTeamType.None)
             {
-                int num = Respawning.RespawnTickets.Singleton.GetAvailableTickets(ev.NextKnownTeam);
-                if (num == 0)
+                int tickets = Respawning.RespawnTickets.Singleton.GetAvailableTickets(ev.NextKnownTeam);
+                if (tickets == 0)
                 {
-                    num = 5;
+                    tickets = 5;
                     Respawning.RespawnTickets.Singleton.GrantTickets(Respawning.SpawnableTeamType.ChaosInsurgency, 5, true);
                 }
-                ev.MaximumRespawnAmount = Mathf.Min(num, spawnableTeam.MaxWaveSize);
+
+                ev.MaximumRespawnAmount = Mathf.Min(tickets, spawnableTeam.MaxWaveSize);
             }
+
             ev.MaximumRespawnAmount = Mathf.Max(ev.MaximumRespawnAmount, 0);
             while (ev.Players.Count > ev.MaximumRespawnAmount)
                 ev.Players.RemoveAt(ev.Players.Count - 1);
-            ev.Players.Shuffle(RespawnQueueSeed);
+            ev.Players.Shuffle(this.RespawnQueueSeed);
             //ev.Players.Clear();
             //foreach (var item in SpawnQueue)
             //    ev.Players.Add(item);
             this.CallDelayed(20, () =>
             {
-                RespawnQueueSeed = -1;
-            }, "RespawningTeam");*/
+                this.RespawnQueueSeed = -1;
+            }, "RespawningTeam");
         }
 
         private void Server_RestartingRound()
         {
-            //RespawnQueueSeed = -1;
+            this.RespawnQueueSeed = -1;
         }
 
         private void Server_RoundStarted()
@@ -141,7 +142,11 @@ namespace Mistaken.SpectatorGUI
             while (Round.IsStarted && rid == RoundPlus.RoundId)
             {
                 yield return Timing.WaitForSeconds(1);
-                if (!RealPlayers.Any(RoleType.Spectator))
+
+                var spectators = RealPlayers.Get(RoleType.Spectator);
+                var spectatorsCount = spectators.Count();
+
+                if (spectatorsCount == 0)
                     continue;
                 try
                 {
@@ -156,10 +161,7 @@ namespace Mistaken.SpectatorGUI
                     var respawningMTF = Math.Min(Dynamic_maxRespawnMTF, toRespawn);
                     var notrespawningMTF = toRespawn - respawningMTF;
 
-
                     var ttr = Mathf.RoundToInt(respawnManager._timeForNextSequence - (float)respawnManager._stopwatch.Elapsed.TotalSeconds);
-
-                    var spectators = RealPlayers.Get(RoleType.Spectator).Count();
 
                     this.spawnQueue.Clear();
                     if (respawnManager._curSequence == Respawning.RespawnManager.RespawnSequencePhase.PlayingEntryAnimations)
@@ -169,71 +171,76 @@ namespace Mistaken.SpectatorGUI
                             List<Player> list = RealPlayers.List.Where(p => p.IsDead && !p.IsOverwatchEnabled).OrderBy(rh => rh.ReferenceHub.characterClassManager.DeathTime).ToList();
                             int maxRespawnablePlayers = respawnManager.NextKnownTeam == Respawning.SpawnableTeamType.ChaosInsurgency ? Dynamic_maxRespawnCI : Dynamic_maxRespawnMTF;
                             maxRespawnablePlayers = Math.Max(maxRespawnablePlayers, 0);
+
                             while (list.Count > maxRespawnablePlayers)
                                 list.RemoveAt(list.Count - 1);
 
-                            foreach (var player in list)
-                                this.spawnQueue.Add(player.Id, (player, RoleType.Spectator));
-
-                            /*if (RespawnQueueSeed == -1)
-                                RespawnQueueSeed = UnityEngine.Random.Range(0, 10000);
-                            list.Shuffle(RespawnQueueSeed);
-                            RoleType classid;
+                            // foreach (var player in list)
+                            //     this.spawnQueue.Add(player.Id, (player, RoleType.Spectator));
+                            if (this.RespawnQueueSeed == -1)
+                                this.RespawnQueueSeed = UnityEngine.Random.Range(0, 10000);
+                            list.Shuffle(this.RespawnQueueSeed);
+                            Queue<RoleType> queue = new Queue<RoleType>();
+                            spawnableTeam.GenerateQueue(queue, list.Count);
                             foreach (var player in list)
                             {
                                 try
                                 {
-                                    classid = spawnableTeam.ClassQueue[Mathf.Min(spawnQueue.Count, spawnableTeam.ClassQueue.Length - 1)];
-                                    spawnQueue.Add(player.Id, (player, classid));
+                                    this.spawnQueue.Add(player.Id, (player, queue.Dequeue()));
                                 }
                                 catch (Exception)
                                 {
                                 }
                             }
-                            NorthwoodLib.Pools.ListPool<Player>.Shared.Return(list);*/
+
+                            NorthwoodLib.Pools.ListPool<Player>.Shared.Return(list);
                         }
                     }
 
-                    string ttrPlayer = this.InformTTR(spectators, false, "");
-                    foreach (var player in RealPlayers.List.Where(p => p.IsDead))
+                    string message = this.PrepareInfoText(spectatorsCount, out string adminMessage);
+
+                    foreach (var player in spectators)
                     {
-                        if (!DeathMessages.TryGetValue(player.Id, out string message))
-                            message = "";
+                        if (!DeathMessages.TryGetValue(player.Id, out string outputMessage))
+                            outputMessage = string.Empty;
                         if (respawnManager._curSequence == Respawning.RespawnManager.RespawnSequencePhase.PlayingEntryAnimations)
                         {
                             /*if (NoEndlessRoundHandler.SpawnSamsara)
                                 InformRespawnSamsara(ttr, respawningMTF, notrespawningMTF, spawnQueue.ContainsKey(player.Id));
                             else */
                             if (respawnManager.NextKnownTeam == Respawning.SpawnableTeamType.ChaosInsurgency)
-                                message += this.InformRespawnCI(ttr, respawningCI, notrespawningCI, this.spawnQueue.ContainsKey(player.Id) ? this.spawnQueue[player.Id].Role : RoleType.None);
+                                outputMessage += this.InformRespawnCI(ttr, respawningCI, notrespawningCI, this.spawnQueue.ContainsKey(player.Id) ? this.spawnQueue[player.Id].Role : RoleType.None);
                             else if (respawnManager.NextKnownTeam == Respawning.SpawnableTeamType.NineTailedFox)
-                                message += this.InformRespawnMTF(ttr, respawningMTF, notrespawningMTF, this.spawnQueue.ContainsKey(player.Id) ? this.spawnQueue[player.Id].Role : RoleType.None, this.spawnQueue.FirstOrDefault(i => i.Value.Role == RoleType.NtfCaptain).Value.Player?.GetDisplayName() ?? "UNKNOWN");
+                                outputMessage += this.InformRespawnMTF(ttr, respawningMTF, notrespawningMTF, this.spawnQueue.ContainsKey(player.Id) ? this.spawnQueue[player.Id].Role : RoleType.None, this.spawnQueue.FirstOrDefault(i => i.Value.Role == RoleType.NtfCaptain).Value.Player?.GetDisplayName() ?? "UNKNOWN");
                             else
-                                message += this.InformRespawnNone(ttr);
+                                outputMessage += this.InformRespawnNone(ttr);
                         }
                         else
-                            message += this.InformRespawnWaiting(ttr);
+                            outputMessage += this.InformRespawnWaiting(ttr);
                         if (player.CheckPermissions(PlayerPermissions.AdminChat))
                         {
-                            string adminMsg = "";
-                            /*if (player.GetSessionVar<bool>(SessionVarType.LONG_OVERWATCH))
+                            string adminMsg = "{masterAdminMessage}";
+                            if (player.GetSessionVar<bool>(SessionVarType.LONG_OVERWATCH))
                                 adminMsg = "[<color=red>LONG OVERWATCH <b><color=yellow>ACTIVE</color></b></color>]";
-                            else if (End.OverwatchHandler.InOverwatch.TryGetValue(player.UserId, out DateTime checkTime))
+                            else if (player.IsOverwatchEnabled && player.TryGetSessionVariable<DateTime>("OVERWATCH_START", out DateTime checkTime))
                             {
                                 var diff = checkTime.AddMinutes(5) - DateTime.Now;
                                 adminMsg = $"[<color=yellow>OVERWATCH <b>ACTIVE</b> | {diff.Minutes:00}<color=yellow>:</color>{diff.Seconds:00}</color>]";
-                            }*/
-                            message += this.InformTTR(spectators, true, adminMsg);
-                            message += "<br><br><br><br>" + this.InformSpectating(Player.Get(player.ReferenceHub.spectatorManager.CurrentSpectatedPlayer), true);
+                            }
+                            else if (player.IsOverwatchEnabled)
+                                adminMsg = $"[<color=yellow>OVERWATCH <b>ACTIVE</b> | <color=yellow>UNKNOWN</color> overwatch time</color>]";
+
+                            outputMessage += this.InformTTR(message, player, true, adminMessage.Replace("{masterAdminMessage}", adminMsg));
+                            outputMessage += "<br><br><br><br>" + this.InformSpectating(Player.Get(player.ReferenceHub.spectatorManager.CurrentSpectatedPlayer), true);
                         }
                         else
                         {
-                            message += ttrPlayer;
-                            message += "<br><br><br><br>" + this.InformSpectating(Player.Get(player.ReferenceHub.spectatorManager.CurrentSpectatedPlayer), false);
+                            outputMessage += this.InformTTR(message, player, false, adminMessage);
+                            outputMessage += "<br><br><br><br>" + this.InformSpectating(Player.Get(player.ReferenceHub.spectatorManager.CurrentSpectatedPlayer), false);
                         }
 
                         // player.ShowHint(message, 2);
-                        player.SetGUI("specInfo", PseudoGUIPosition.MIDDLE, "<br><br><br><br><br>" + message);
+                        player.SetGUI("specInfo", PseudoGUIPosition.MIDDLE, "<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>" + outputMessage);
                     }
 
                     MasterHandler.LogTime("SpecInfoHandler", "TTRUpdate", start, DateTime.Now);
@@ -246,9 +253,9 @@ namespace Mistaken.SpectatorGUI
             }
         }
 
-        private string InformTTR(/*Player player, */int spectators, bool admin, string masterAdminMessage)
+        private string InformTTR(string preparedText, Player player, bool admin, string adminMessage)
         {
-            //string masterAdminMessage = "";//"[<color=yellow>No warning active</color>]";
+            string masterAdminMessage = string.Empty;
             if (Round.IsLocked)
                 masterAdminMessage = "[<color=yellow>ROUND LOCK <b>ACTIVE</b></color>]";
             else if (API.Utilities.Map.RespawnLock)
@@ -256,28 +263,33 @@ namespace Mistaken.SpectatorGUI
             /*else if (RealPlayers.List.Count() < 4)
                 masterAdminMessage = "[<color=yellow>LESS THAN 4 PLAYERS | <b>NOT SAVING</b> ACTIVITY</color>]";*/
 
+            var deadTime = DateTime.Now - new DateTime(player.ReferenceHub.characterClassManager.DeathTime);
+            var deadTimeString = string.Format(PluginHandler.Instance.Translation.DeadTimeInfo, deadTime.Minutes.ToString("00"), deadTime.Seconds.ToString("00"));
+            return preparedText.Replace("{DeadTime}", deadTimeString) + (admin ? $"<br>{adminMessage.Replace("{masterAdminMessage}", masterAdminMessage)}" : string.Empty);
+        }
+
+        private string PrepareInfoText(int spectators, out string adminMessage)
+        {
             var systemTimeString = string.Format(PluginHandler.Instance.Translation.TimeInfo, DateTime.Now.ToString("HH:mm:ss").Replace(":", "</color>:<color=yellow>"));
-            //var deadTime = DateTime.Now - (new DateTime(player.ReferenceHub.characterClassManager.DeathTime));
             var lczTime = (float)LightContainmentZoneDecontamination.DecontaminationController.Singleton.DecontaminationPhases.First(d => d.Function == LightContainmentZoneDecontamination.DecontaminationController.DecontaminationPhase.PhaseFunction.Final).TimeTrigger - (float)LightContainmentZoneDecontamination.DecontaminationController.GetServerTime;
             var lczString = string.Format(PluginHandler.Instance.Translation.LCZInfo, ((lczTime - (lczTime % 60)) / 60).ToString("00"), Mathf.RoundToInt(lczTime % 60).ToString("00"));
             if (lczTime < 0)
-                lczString = string.Format(PluginHandler.Instance.Translation.LCZInfoDecontcaminated);
+                lczString = PluginHandler.Instance.Translation.LCZInfoDecontcaminated;
             if (Warhead.IsInProgress)
                 lczString = string.Format(PluginHandler.Instance.Translation.WarheadInfo, Warhead.DetonationTimer.ToString("00"));
             if (Warhead.IsDetonated)
-                lczString = string.Format(PluginHandler.Instance.Translation.WarheadInfoDetonated);
+                lczString = PluginHandler.Instance.Translation.WarheadInfoDetonated;
             var roundTimeString = string.Format(PluginHandler.Instance.Translation.RoundInfo, Round.ElapsedTime.Minutes.ToString("00"), Round.ElapsedTime.Seconds.ToString("00"));
-            var specatorString = spectators < 2 ? "Jesteś <color=yellow>jedynym</color> martwym graczem" : string.Format(PluginHandler.Instance.Translation.SpectatorInfo, spectators - 1);
+            var specatorString = spectators < 2 ? PluginHandler.Instance.Translation.OnlySpectatorInfo : string.Format(PluginHandler.Instance.Translation.SpectatorInfo, spectators - 1);
             var playersString = string.Format(PluginHandler.Instance.Translation.PlayersInfo, PlayerManager.players.Count, CustomNetworkManager.slots);
-            //var deadTimeString = plugin.ReadTranslation("dead_time_info", deadTime.Minutes.ToString("00"), deadTime.Seconds.ToString("00"));
-            //var generatorString = plugin.ReadTranslation("generator_info", Patches.SCP079RecontainPatch.Recontained ? "5" : Map.ActivatedGenerators.ToString()) + (cache_nearestGenerator == null ? "" : $"(<color=yellow>{Math.Round(cache_nearestGenerator.remainingPowerup % 80)}</color>s)");
-            //var overchargeString = plugin.ReadTranslation("overcharge_info", Patches.SCP079RecontainPatch.ErrorMode ? $"[<color=red><b>ERROR</b></color>|Code: {(Patches.SCP079RecontainPatch.Recontained ? 1 : 0)}{(Patches.SCP079RecontainPatch.Waiting ? 1 : 0)}{Patches.SCP079RecontainPatch.SecondsLeft}]" : (Exiled.Events.Handlers.CustomEvents.SCP079.IsRecontainmentPaused ? $"<color=red>{Exiled.Events.Handlers.CustomEvents.SCP079.TimeToRecontainment}</color>" : $"<color=yellow>{Exiled.Events.Handlers.CustomEvents.SCP079.TimeToRecontainment}</color>"));
-            //var genString = Exiled.Events.Handlers.CustomEvents.SCP079.IsBeingRecontained ? overchargeString : generatorString;
-            //if (Warhead.IsDetonated)
-            //    genString = generatorString;
-            var recontainmentReadyString = string.Format(PluginHandler.Instance.Translation.RecontainmentReady);
-            var recontainmentNotReadyString = string.Format(PluginHandler.Instance.Translation.RecontainmentNotReady);
-            var recontainmentContainedyString = string.Format(PluginHandler.Instance.Translation.RecontainmentContained);
+            var generatorString = string.Format(PluginHandler.Instance.Translation.GeneratorInfo, Map.ActivatedGenerators.ToString()) + (cache_nearestGenerator == null ? string.Empty : $" (<color=yellow>{Math.Round((double)(cache_nearestGenerator?.Network_syncTime ?? -1))}</color>s)");
+            var overchargeString = string.Format(PluginHandler.Instance.Translation.OverchargeInfo, Events.Handlers.CustomEvents.SCP079.IsRecontained ? "<color=yellow>Recontained</color>" : "<color=yellow>Recontainment ready</color>");
+            var genString = Events.Handlers.CustomEvents.SCP079.IsBeingRecontained | Events.Handlers.CustomEvents.SCP079.IsRecontained ? overchargeString : generatorString;
+            if (Warhead.IsDetonated)
+                genString = generatorString;
+            var recontainmentReadyString = PluginHandler.Instance.Translation.RecontainmentReady;
+            var recontainmentNotReadyString = PluginHandler.Instance.Translation.RecontainmentNotReady;
+            var recontainmentContainedyString = PluginHandler.Instance.Translation.RecontainmentContained;
             var recontainmentString = MapPlus.FemurBreaked ? recontainmentContainedyString : (MapPlus.Lured ? recontainmentReadyString : recontainmentNotReadyString);
             var miscString = Is106 ? recontainmentString : "[<color=yellow>REDACTED</color>]";
             var adminWarheadString = string.Format(
@@ -290,8 +302,8 @@ namespace Mistaken.SpectatorGUI
                 BetterWarheadHandler.Warhead.LastStopUser?.Nickname ?? "UNKNOWN",
                 BetterWarheadHandler.Warhead.StartLock,
                 BetterWarheadHandler.Warhead.StopLock);
-            var adminString = string.Format(PluginHandler.Instance.Translation.AdminInfo, masterAdminMessage, cache_ticketsMTF, cache_ticketsCI, adminWarheadString);
-            return $"<br><br><br>{specatorString}<br><size=50%>{roundTimeString}   |   [<color=yellow>REDACTED</color>]   |   {playersString}<br>{lczString}   |   {systemTimeString}<br>{/*genString*/"[<color=yellow>REDACTED</color>]"}   |   {miscString}</size>" + (admin ? $"<br>{adminString}" : "");
+            adminMessage = string.Format(PluginHandler.Instance.Translation.AdminInfo, "{masterAdminMessage}", cache_ticketsMTF, cache_ticketsCI, adminWarheadString);
+            return $"<br><br><br>{specatorString}<br><size=50%>{roundTimeString}   |   {{DeadTime}}   |   {playersString}<br>{lczString}   |   {systemTimeString}<br>{genString}   |   {miscString}</size>";
         }
 
         private string InformSpectating(Player player, bool admin)
