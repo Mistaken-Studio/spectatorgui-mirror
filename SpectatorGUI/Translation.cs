@@ -8,7 +8,7 @@ using Exiled.API.Interfaces;
 
 namespace Mistaken.SpectatorGUI
 {
-    public class Translation : ITranslation
+    internal class Translation : ITranslation
     {
         public string TimeInfo { get; set; } = "Current time: <color=yellow>{0}</color>";
 

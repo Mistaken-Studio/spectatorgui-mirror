@@ -42,6 +42,7 @@
     <Reference Include="0Mistaken.API" HintPath="$(MISTAKEN_REFERENCES)\0Mistaken.API.dll" />
     <Reference Include="Mistaken.Events" HintPath="$(MISTAKEN_REFERENCES)\Mistaken.Events.dll" />
     <Reference Include="NorthwoodLib" HintPath="$(MISTAKEN_REFERENCES)\NorthwoodLib.dll" />
+    <Reference Include="CommandSystem.Core" HintPath="$(MISTAKEN_REFERENCES)\CommandSystem.Core.dll" />
     <Reference Include="Mistaken.RoundLogger" HintPath="$(MISTAKEN_REFERENCES)\Mistaken.RoundLogger.dll" />
     <Reference Include="UnityEngine.CoreModule" HintPath="$(MISTAKEN_REFERENCES)\UnityEngine.CoreModule.dll" />
     <Reference Include="UnityEngine.PhysicsModule" HintPath="$(MISTAKEN_REFERENCES)\UnityEngine.PhysicsModule.dll" />

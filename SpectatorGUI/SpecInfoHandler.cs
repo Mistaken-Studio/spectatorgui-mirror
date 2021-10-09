@@ -1,4 +1,10 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// <copyright file="SpecInfoHandler.cs" company="Mistaken">
+// Copyright (c) Mistaken. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Exiled.API.Features;
@@ -14,6 +20,14 @@ namespace Mistaken.SpectatorGUI
 {
     internal class SpecInfoHandler : Module
     {
+        public static void AddDeathMessage(Player player, string message)
+        {
+            if (DeathMessages.ContainsKey(player.Id))
+                DeathMessages.Remove(player.Id);
+            DeathMessages.Add(player.Id, message);
+            Module.CallSafeDelayed(15, () => DeathMessages.Remove(player.Id), "SpecInfo.AddDeathMessage");
+        }
+
         public SpecInfoHandler(PluginHandler p)
             : base(p)
         {
@@ -37,13 +51,26 @@ namespace Mistaken.SpectatorGUI
             Exiled.Events.Handlers.Player.ChangingRole -= this.Handle<Exiled.Events.EventArgs.ChangingRoleEventArgs>((ev) => this.Player_ChangingRole(ev));
         }
 
+        private static readonly Dictionary<int, string> DeathMessages = new Dictionary<int, string>();
+        private static bool is106 = false;
+        private static int cache_ticketsCI;
+        private static int cache_ticketsMTF;
+        private static int cache_maxCI;
+        private static int cache_maxMTF;
+        private static MapGeneration.Distributors.Scp079Generator cache_nearestGenerator;
+
+        private static int Dynamic_maxRespawnCI => Math.Min(cache_maxCI, cache_ticketsCI == 0 ? 5 : cache_ticketsCI);
+
+        private static int Dynamic_maxRespawnMTF => Math.Min(cache_maxMTF, cache_ticketsMTF);
+
+        private readonly Dictionary<int, (Player Player, RoleType Role)> spawnQueue = new Dictionary<int, (Player Player, RoleType Role)>();
+        private int respawnQueueSeed = -1;
+
         private void Player_ChangingRole(Exiled.Events.EventArgs.ChangingRoleEventArgs ev)
         {
             if (ev.NewRole != RoleType.Spectator)
                 ev.Player.SetGUI("specInfo", PseudoGUIPosition.MIDDLE, null);
         }
-
-        private int RespawnQueueSeed = -1;
 
         private void Server_RespawningTeam(Exiled.Events.EventArgs.RespawningTeamEventArgs ev)
         {
@@ -62,19 +89,23 @@ namespace Mistaken.SpectatorGUI
             ev.MaximumRespawnAmount = Mathf.Max(ev.MaximumRespawnAmount, 0);
             while (ev.Players.Count > ev.MaximumRespawnAmount)
                 ev.Players.RemoveAt(ev.Players.Count - 1);
-            ev.Players.Shuffle(this.RespawnQueueSeed);
-            //ev.Players.Clear();
-            //foreach (var item in SpawnQueue)
+            ev.Players.Shuffle(this.respawnQueueSeed);
+
+            // ev.Players.Clear();
+            // foreach (var item in SpawnQueue)
             //    ev.Players.Add(item);
-            this.CallDelayed(20, () =>
-            {
-                this.RespawnQueueSeed = -1;
-            }, "RespawningTeam");
+            this.CallDelayed(
+                20,
+                () =>
+                {
+                    this.respawnQueueSeed = -1;
+                },
+                "RespawningTeam");
         }
 
         private void Server_RestartingRound()
         {
-            this.RespawnQueueSeed = -1;
+            this.respawnQueueSeed = -1;
         }
 
         private void Server_RoundStarted()
@@ -84,34 +115,14 @@ namespace Mistaken.SpectatorGUI
 
             this.RunCoroutine(this.TTRUpdate(), "TTRUpdate");
             this.RunCoroutine(this.UpdateCache(), "UpdateCache");
-            this.CallDelayed(45, () =>
-            {
-                Is106 = RealPlayers.List.Any(p => p.Role == RoleType.Scp106);
-            }, "Update106Info");
+            this.CallDelayed(
+                45,
+                () =>
+                {
+                    is106 = RealPlayers.List.Any(p => p.Role == RoleType.Scp106);
+                },
+                "Update106Info");
         }
-
-        private static bool Is106 = false;
-        private readonly Dictionary<int, (Player Player, RoleType Role)> spawnQueue = new Dictionary<int, (Player Player, RoleType Role)>();
-        private static readonly Dictionary<int, string> DeathMessages = new Dictionary<int, string>();
-
-        public static void AddDeathMessage(Player player, string message)
-        {
-            if (DeathMessages.ContainsKey(player.Id))
-                DeathMessages.Remove(player.Id);
-            DeathMessages.Add(player.Id, message);
-            Module.CallSafeDelayed(15, () => DeathMessages.Remove(player.Id), "SpecInfo.AddDeathMessage");
-        }
-
-        public static int cache_ticketsCI;
-        public static int cache_ticketsMTF;
-        public static int cache_maxCI;
-        public static int cache_maxMTF;
-
-        public static MapGeneration.Distributors.Scp079Generator cache_nearestGenerator;
-
-        public static int Dynamic_maxRespawnCI => Math.Min(cache_maxCI, cache_ticketsCI == 0 ? 5 : cache_ticketsCI);
-
-        public static int Dynamic_maxRespawnMTF => Math.Min(cache_maxMTF, cache_ticketsMTF);
 
         private IEnumerator<float> UpdateCache()
         {
@@ -177,9 +188,9 @@ namespace Mistaken.SpectatorGUI
 
                             // foreach (var player in list)
                             //     this.spawnQueue.Add(player.Id, (player, RoleType.Spectator));
-                            if (this.RespawnQueueSeed == -1)
-                                this.RespawnQueueSeed = UnityEngine.Random.Range(0, 10000);
-                            list.Shuffle(this.RespawnQueueSeed);
+                            if (this.respawnQueueSeed == -1)
+                                this.respawnQueueSeed = UnityEngine.Random.Range(0, 10000);
+                            list.Shuffle(this.respawnQueueSeed);
                             Queue<RoleType> queue = new Queue<RoleType>();
                             spawnableTeam.GenerateQueue(queue, list.Count);
                             foreach (var player in list)
@@ -240,7 +251,7 @@ namespace Mistaken.SpectatorGUI
                         }
 
                         // player.ShowHint(message, 2);
-                        player.SetGUI("specInfo", PseudoGUIPosition.MIDDLE, "<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>" + outputMessage);
+                        player.SetGUI("specInfo", PseudoGUIPosition.MIDDLE, "<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>" + outputMessage);
                     }
 
                     MasterHandler.LogTime("SpecInfoHandler", "TTRUpdate", start, DateTime.Now);
@@ -291,7 +302,7 @@ namespace Mistaken.SpectatorGUI
             var recontainmentNotReadyString = PluginHandler.Instance.Translation.RecontainmentNotReady;
             var recontainmentContainedyString = PluginHandler.Instance.Translation.RecontainmentContained;
             var recontainmentString = MapPlus.FemurBreaked ? recontainmentContainedyString : (MapPlus.Lured ? recontainmentReadyString : recontainmentNotReadyString);
-            var miscString = Is106 ? recontainmentString : "[<color=yellow>REDACTED</color>]";
+            var miscString = is106 ? recontainmentString : "[<color=yellow>REDACTED</color>]";
             var adminWarheadString = string.Format(
                 PluginHandler.Instance.Translation.AdminWarheadInfo,
                 Warhead.LeverStatus ? (Warhead.CanBeStarted ? "<color=green>Ready</color>" : "<color=blue>Cooldown</color>") : "<color=red>Disabled</color>",
@@ -308,7 +319,7 @@ namespace Mistaken.SpectatorGUI
 
         private string InformSpectating(Player player, bool admin)
         {
-            if (player.IsDead)
+            if (player?.IsDead ?? true || (!player?.IsConnected ?? true))
                 return string.Empty;
 
             string tor = $"{player.GetDisplayName()} is <color=yellow>playing</color> as <color={player.RoleColor.ToHex()}>{player.Role}</color>";
@@ -321,7 +332,7 @@ namespace Mistaken.SpectatorGUI
                 tor += $"<br>Id: {player.Id}";
             }
 
-            return tor;
+            return "<size=50%>" + tor + "</size>";
         }
 
         private string InformRespawnWaiting(float ttr)
@@ -334,22 +345,16 @@ namespace Mistaken.SpectatorGUI
             return string.Format(PluginHandler.Instance.Translation.RespawnNone, (ttr % 60).ToString("00"));
         }
 
-        private string InformRespawnSamsara(float ttr, int respawningSamsara, int notrespawningSamsara, bool willRespawn)
+        private string InformRespawnMTF(float ttr, int respawningMTF, int notrespawningMTF, RoleType expectedRole, string commander)
         {
-            string roleString = willRespawn ? "<color=yellow>Przylecisz</color> jako <color=#1200ff>Jednostka Samsary</color>" : "<color=yellow><b>Nie</b> przylecisz</color>";
-            return $"<color=#0096ff><size=200%><b>Helikoper Samsary łąduje</b></color> <br>za <color=yellow>{(ttr % 60):00}</color>s</size><br><color=yellow>{respawningSamsara}</color> jednostek Samsary przyleci<br><size=50%><color=yellow>{notrespawningSamsara}</color> graczy nie przyleci</size><br>{roleString}";
-        }
-
-        private string InformRespawnMTF(float ttr, int respawningMTF, int notrespawningMTF, RoleType expectedRole, string Commander)
-        {
-            string roleString = expectedRole == RoleType.None ? string.Format(PluginHandler.Instance.Translation.RespawnMTFWillNotRespawn, Commander) : string.Format(PluginHandler.Instance.Translation.RespawnMTFWillRespawn);
+            string roleString = expectedRole == RoleType.None ? string.Format(PluginHandler.Instance.Translation.RespawnMTFWillNotRespawn, commander) : string.Format(PluginHandler.Instance.Translation.RespawnMTFWillRespawn);
             switch (expectedRole)
             {
                 case RoleType.NtfPrivate:
-                    roleString += string.Format(PluginHandler.Instance.Translation.RespawnMTFWillRespawnPrivate, Commander);
+                    roleString += string.Format(PluginHandler.Instance.Translation.RespawnMTFWillRespawnPrivate, commander);
                     break;
                 case RoleType.NtfSergeant:
-                    roleString += string.Format(PluginHandler.Instance.Translation.RespawnMTFWillRespawnSergeant, Commander);
+                    roleString += string.Format(PluginHandler.Instance.Translation.RespawnMTFWillRespawnSergeant, commander);
                     break;
                 case RoleType.NtfCaptain:
                     roleString += string.Format(PluginHandler.Instance.Translation.RespawnMTFWillRespawnCaptain);

@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="Patch.cs" company="Mistaken">
+// <copyright file="RespawnPatch.cs" company="Mistaken">
 // Copyright (c) Mistaken. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -16,7 +16,11 @@ namespace Mistaken.SpectatorGUI
     [HarmonyPatch(typeof(RespawnManager), "Spawn")]
     internal static class RespawnPatch
     {
+#pragma warning disable IDE0051 // Usuń nieużywane prywatne składowe
+#pragma warning disable IDE0060 // Usuń nieużywany parametr
         private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+#pragma warning restore IDE0060 // Usuń nieużywany parametr
+#pragma warning restore IDE0051 // Usuń nieużywane prywatne składowe
         {
             List<CodeInstruction> newInstructions = NorthwoodLib.Pools.ListPool<CodeInstruction>.Shared.Rent(instructions);
             int index = newInstructions.FindIndex((CodeInstruction i) => i.opcode == OpCodes.Stloc_3) + 1;
