@@ -360,9 +360,9 @@ namespace Mistaken.SpectatorGUI
                     roleString += string.Format(PluginHandler.Instance.Translation.RespawnMTFWillRespawnCaptain);
                     break;
 
-                default:
+                /*default:
                     roleString += "UNKNOWN";
-                    break;
+                    break;*/
             }
 
             return string.Format(PluginHandler.Instance.Translation.RespawnMTFRespawn, (ttr % 60).ToString("00"), respawningMTF, notrespawningMTF, roleString);
@@ -383,9 +383,9 @@ namespace Mistaken.SpectatorGUI
                     roleString += string.Format(PluginHandler.Instance.Translation.RespawnCIWillRespawnMarauder);
                     break;
 
-                default:
+                /*default:
                     roleString += "UNKNOWN";
-                    break;
+                    break;*/
             }
 
             return string.Format(PluginHandler.Instance.Translation.RespawnCIRespawn, (ttr % 60).ToString("00"), respawningCI, notrespawningCI, roleString);
