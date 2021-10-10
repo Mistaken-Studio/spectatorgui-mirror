@@ -48,11 +48,11 @@ namespace Mistaken.SpectatorGUI
 
         public string RespawnNone { get; set; } = "<color=#8f0000><b>None? will respawn</b></color> in <color=yellow>{0}</color>s";
 
-        public string RespawnCIWillRespawnRifleman { get; set; } = "<color=#61beff>Chaos Insurgency Rifleman</color>";
+        public string RespawnCIWillRespawnRifleman { get; set; } = "<color=#097c1b>Chaos Insurgency Rifleman</color>";
 
-        public string RespawnCIWillRespawnRepressor { get; set; } = "<color=#0096ff>Chaos Insurgency Repressor</color>";
+        public string RespawnCIWillRespawnRepressor { get; set; } = "<color=#0d7d35>Chaos Insurgency Repressor</color>";
 
-        public string RespawnCIWillRespawnMarauder { get; set; } = "<color=#1200ff>Chaos Insurgency Maruder</color>";
+        public string RespawnCIWillRespawnMarauder { get; set; } = "<color=#006826>Chaos Insurgency Maruder</color>";
 
         public string RespawnCIWillRespawn { get; set; } = "You <color=yellow>will</color> respawn as <color=#1d6f00>Chaos Insurgent</color>";
 
