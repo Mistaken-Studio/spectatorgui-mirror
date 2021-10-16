@@ -30,6 +30,21 @@ namespace Mistaken.SpectatorGUI
         /// <inheritdoc/>
         public override Version RequiredExiledVersion => new Version(3, 0, 3);
 
+#pragma warning disable SA1202 // Elements should be ordered by access
+        private Version version;
+
+        /// <inheritdoc/>
+        public override Version Version
+        {
+            get
+            {
+                if (this.version == null)
+                    this.version = this.Assembly.GetName().Version;
+                return this.version;
+            }
+        }
+#pragma warning restore SA1202 // Elements should be ordered by access
+
         /// <inheritdoc/>
         public override void OnEnabled()
         {
