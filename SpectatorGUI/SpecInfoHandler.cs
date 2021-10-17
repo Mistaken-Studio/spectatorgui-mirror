@@ -7,8 +7,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Exiled.API.Extensions;
 using Exiled.API.Features;
 using Exiled.API.Features.Items;
+using Exiled.CustomItems.API.Features;
+using Exiled.CustomRoles.API.Features;
 using MEC;
 using Mistaken.API;
 using Mistaken.API.Diagnostics;
@@ -18,23 +21,54 @@ using UnityEngine;
 
 namespace Mistaken.SpectatorGUI
 {
-    internal class SpecInfoHandler : Module
+    /// <inheritdoc/>
+    public class SpecInfoHandler : Module
     {
-        public static void AddDeathMessage(Player player, string message)
+        /// <summary>
+         /// Dictionary containing Custom class descryptors to describe classes.
+         /// </summary>
+        public static readonly Dictionary<RoleType, Func<Player, string>> CustomClassDescriptors = new Dictionary<RoleType, Func<Player, string>>();
+
+        static SpecInfoHandler()
         {
-            if (DeathMessages.ContainsKey(player.Id))
-                DeathMessages.Remove(player.Id);
-            DeathMessages.Add(player.Id, message);
-            Module.CallSafeDelayed(15, () => DeathMessages.Remove(player.Id), "SpecInfo.AddDeathMessage");
+            CustomClassDescriptors[RoleType.Scp096] = (player) =>
+            {
+                var scp = player.CurrentScp as PlayableScps.Scp096;
+                var rageText = $"<br> Rage left: <color=yellow>{scp.EnrageTimeLeft}</color>s<br>Targets: <color=yellow>{scp._targets.Count}</color>";
+                var cooldownText = $"<br> Cooldown left: <color=yellow>{scp.RemainingEnrageCooldown}</color>s";
+
+                switch (scp.PlayerState)
+                {
+                    case PlayableScps.Scp096PlayerState.Enraging:
+                    case PlayableScps.Scp096PlayerState.Enraged:
+                    case PlayableScps.Scp096PlayerState.Attacking:
+                    case PlayableScps.Scp096PlayerState.PryGate:
+                    case PlayableScps.Scp096PlayerState.Charging:
+                        return rageText;
+
+                    case PlayableScps.Scp096PlayerState.TryNotToCry:
+                    case PlayableScps.Scp096PlayerState.Docile:
+                    case PlayableScps.Scp096PlayerState.Calming:
+                        return scp.RemainingEnrageCooldown != 0 ? cooldownText : string.Empty;
+
+                    default:
+                        return string.Empty;
+                }
+            };
         }
 
-        public SpecInfoHandler(PluginHandler p)
-            : base(p)
+        /// <summary>
+        /// Gets or sets adds info about spectated player if spectating player is admin.
+        /// </summary>
+        public static Func<Player, string> AdminDescriptor { get; set; } = (player) =>
         {
-        }
+            return $"<br>Id: {player.Id}";
+        };
 
+        /// <inheritdoc/>
         public override string Name => "SpecInfo";
 
+        /// <inheritdoc/>
         public override void OnEnable()
         {
             Exiled.Events.Handlers.Server.RoundStarted += this.Handle(() => this.Server_RoundStarted(), "RoundStart");
@@ -43,12 +77,18 @@ namespace Mistaken.SpectatorGUI
             Exiled.Events.Handlers.Player.ChangingRole += this.Handle<Exiled.Events.EventArgs.ChangingRoleEventArgs>((ev) => this.Player_ChangingRole(ev));
         }
 
+        /// <inheritdoc/>
         public override void OnDisable()
         {
             Exiled.Events.Handlers.Server.RoundStarted -= this.Handle(() => this.Server_RoundStarted(), "RoundStart");
             Exiled.Events.Handlers.Server.RestartingRound -= this.Handle(() => this.Server_RestartingRound(), "RoundRestart");
             Exiled.Events.Handlers.Server.RespawningTeam -= this.Handle<Exiled.Events.EventArgs.RespawningTeamEventArgs>((ev) => this.Server_RespawningTeam(ev));
             Exiled.Events.Handlers.Player.ChangingRole -= this.Handle<Exiled.Events.EventArgs.ChangingRoleEventArgs>((ev) => this.Player_ChangingRole(ev));
+        }
+
+        internal SpecInfoHandler(PluginHandler p)
+            : base(p)
+        {
         }
 
         private static readonly Dictionary<int, string> DeathMessages = new Dictionary<int, string>();
@@ -69,7 +109,10 @@ namespace Mistaken.SpectatorGUI
         private void Player_ChangingRole(Exiled.Events.EventArgs.ChangingRoleEventArgs ev)
         {
             if (ev.NewRole != RoleType.Spectator)
+            {
                 ev.Player.SetGUI("specInfo", PseudoGUIPosition.MIDDLE, null);
+                ev.Player.SetGUI("specInfo_observing", PseudoGUIPosition.BOTTOM, null);
+            }
         }
 
         private void Server_RespawningTeam(Exiled.Events.EventArgs.RespawningTeamEventArgs ev)
@@ -94,13 +137,7 @@ namespace Mistaken.SpectatorGUI
             // ev.Players.Clear();
             // foreach (var item in SpawnQueue)
             //    ev.Players.Add(item);
-            this.CallDelayed(
-                20,
-                () =>
-                {
-                    this.respawnQueueSeed = -1;
-                },
-                "RespawningTeam");
+            this.CallDelayed(20, () => this.respawnQueueSeed = -1, "RespawningTeam");
         }
 
         private void Server_RestartingRound()
@@ -242,12 +279,12 @@ namespace Mistaken.SpectatorGUI
                                 adminMsg = $"[<color=yellow>OVERWATCH <b>ACTIVE</b> | <color=yellow>UNKNOWN</color> overwatch time</color>]";
 
                             outputMessage += this.InformTTR(message, player, true, adminMessage.Replace("{masterAdminMessage}", adminMsg));
-                            outputMessage += "<br><br><br><br>" + this.InformSpectating(Player.Get(player.ReferenceHub.spectatorManager.CurrentSpectatedPlayer), true);
+                            player.SetGUI("specInfo_observing", PseudoGUIPosition.BOTTOM, this.InformSpectating(Player.Get(player.ReferenceHub.spectatorManager.CurrentSpectatedPlayer), true));
                         }
                         else
                         {
                             outputMessage += this.InformTTR(message, player, false, adminMessage);
-                            outputMessage += "<br><br><br><br>" + this.InformSpectating(Player.Get(player.ReferenceHub.spectatorManager.CurrentSpectatedPlayer), false);
+                            player.SetGUI("specInfo_observing", PseudoGUIPosition.BOTTOM, this.InformSpectating(Player.Get(player.ReferenceHub.spectatorManager.CurrentSpectatedPlayer), false));
                         }
 
                         // player.ShowHint(message, 2);
@@ -322,15 +359,55 @@ namespace Mistaken.SpectatorGUI
             if (player?.IsDead ?? true || (!player?.IsConnected ?? true))
                 return string.Empty;
 
-            string tor = $"{player.GetDisplayName()} is <color=yellow>playing</color> as <color={player.RoleColor.ToHex()}>{player.Role}</color>";
+            var roleName = $"<color={player.RoleColor.ToHex()}>{player.Role}</color>";
 
-            if (player.CurrentItem != null)
-                tor += $"<br> and is holding {player.CurrentItem.Type}{(player.CurrentItem is Firearm firearm ? $" <color=yellow>{firearm.Ammo}</color>/<color=yellow>{firearm.MaxAmmo}</color> of <color=yellow>{firearm.AmmoType}</color> {(firearm.Aiming ? " (<color=yellow>AIMING</color>)" : string.Empty)}" : string.Empty)}";
+            if (CustomRole.TryGet(player, out var roles))
+            {
+                if (roles.Count > 0)
+                    roleName = string.Join(", ", roles.Select(x => x.Name));
+            }
+
+            string tor = $"{player.GetDisplayName()} is <color=yellow>playing</color> as {roleName}";
+            if (!CustomClassDescriptors.TryGetValue(player.Role, out var handler))
+            {
+                var currentItem = player.CurrentItem;
+                if (currentItem != null)
+                {
+                    if (CustomItem.TryGet(currentItem, out var customItem))
+                    {
+                        tor += $"<br> and is holding {customItem.Name}";
+                        if (customItem is CustomWeapon customfirearm)
+                        {
+                            var firearm = currentItem as Firearm;
+                            tor += $" <color=yellow>{firearm.Ammo}</color>/<color=yellow>{customfirearm.ClipSize}</color>";
+                            if (firearm.Aiming)
+                                tor += " (<color=yellow>AIMING</color>)";
+                        }
+                    }
+                    else
+                    {
+                        tor += $"<br> and is holding {currentItem.Type}";
+                        if (currentItem is Firearm firearm)
+                        {
+                            tor += $" <color=yellow>{firearm.Ammo}</color>/<color=yellow>{firearm.MaxAmmo}</color> of <color=yellow>{firearm.AmmoType}</color>";
+                            if (firearm.Aiming)
+                                tor += " (<color=yellow>AIMING</color>)";
+
+                            var ammoType = firearm.AmmoType.GetItemType();
+                            tor += $"<br>{firearm.AmmoType}: <color=yellow>{(player.Ammo.TryGetValue(ammoType, out var ammo) ? ammo : 0)}</color>";
+                        }
+                        else if (currentItem is MicroHid microHid)
+                        {
+                            tor += $" with <color=yellow>{microHid.Energy}</color>";
+                        }
+                    }
+                }
+            }
+            else
+                tor += handler(player);
 
             if (admin)
-            {
-                tor += $"<br>Id: {player.Id}";
-            }
+                tor += AdminDescriptor(player);
 
             return "<size=50%>" + tor + "</size>";
         }
