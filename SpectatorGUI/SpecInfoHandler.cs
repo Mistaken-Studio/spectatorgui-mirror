@@ -75,6 +75,7 @@ namespace Mistaken.SpectatorGUI
             Exiled.Events.Handlers.Server.RestartingRound += this.Handle(() => this.Server_RestartingRound(), "RoundRestart");
             Exiled.Events.Handlers.Server.RespawningTeam += this.Handle<Exiled.Events.EventArgs.RespawningTeamEventArgs>((ev) => this.Server_RespawningTeam(ev));
             Exiled.Events.Handlers.Player.ChangingRole += this.Handle<Exiled.Events.EventArgs.ChangingRoleEventArgs>((ev) => this.Player_ChangingRole(ev));
+            Events.Handlers.CustomEvents.ChangingSpectatedPlayer += this.Handle<Events.EventArgs.ChangingSpectatedPlayerEventArgs>((ev) => this.CustomEvents_ChangingSpectatedPlayer(ev));
         }
 
         /// <inheritdoc/>
@@ -84,6 +85,7 @@ namespace Mistaken.SpectatorGUI
             Exiled.Events.Handlers.Server.RestartingRound -= this.Handle(() => this.Server_RestartingRound(), "RoundRestart");
             Exiled.Events.Handlers.Server.RespawningTeam -= this.Handle<Exiled.Events.EventArgs.RespawningTeamEventArgs>((ev) => this.Server_RespawningTeam(ev));
             Exiled.Events.Handlers.Player.ChangingRole -= this.Handle<Exiled.Events.EventArgs.ChangingRoleEventArgs>((ev) => this.Player_ChangingRole(ev));
+            Events.Handlers.CustomEvents.ChangingSpectatedPlayer -= this.Handle<Events.EventArgs.ChangingSpectatedPlayerEventArgs>((ev) => this.CustomEvents_ChangingSpectatedPlayer(ev));
         }
 
         internal SpecInfoHandler(PluginHandler p)
@@ -105,6 +107,12 @@ namespace Mistaken.SpectatorGUI
 
         private readonly Dictionary<int, (Player Player, RoleType Role)> spawnQueue = new Dictionary<int, (Player Player, RoleType Role)>();
         private int respawnQueueSeed = -1;
+
+        private void CustomEvents_ChangingSpectatedPlayer(Events.EventArgs.ChangingSpectatedPlayerEventArgs ev)
+        {
+            if (ev.NewPlayer != ev.Spectator)
+                ev.NewPlayer.SetGUI("specInfo_observing", PseudoGUIPosition.BOTTOM, this.InformSpectating(ev.NewPlayer, ev.Spectator.RemoteAdminAccess));
+        }
 
         private void Player_ChangingRole(Exiled.Events.EventArgs.ChangingRoleEventArgs ev)
         {
@@ -265,7 +273,7 @@ namespace Mistaken.SpectatorGUI
                         }
                         else
                             outputMessage += this.InformRespawnWaiting(ttr);
-                        if (player.CheckPermissions(PlayerPermissions.AdminChat))
+                        if (player.RemoteAdminAccess)
                         {
                             string adminMsg = "{masterAdminMessage}";
                             if (player.GetSessionVar<bool>(SessionVarType.LONG_OVERWATCH))
