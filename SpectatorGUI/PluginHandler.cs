@@ -50,7 +50,8 @@ namespace Mistaken.SpectatorGUI
         {
             Instance = this;
 
-            new Harmony("mistaken.spectatrgui").PatchAll();
+            this.harmony = new Harmony("mistaken.spectatrgui");
+            this.harmony.PatchAll();
 
             new SpecInfoHandler(this);
 
@@ -62,11 +63,15 @@ namespace Mistaken.SpectatorGUI
         /// <inheritdoc/>
         public override void OnDisabled()
         {
+            this.harmony.UnpatchAll();
+
             API.Diagnostics.Module.OnDisable(this);
 
             base.OnDisabled();
         }
 
         internal static PluginHandler Instance { get; private set; }
+
+        private Harmony harmony;
     }
 }
