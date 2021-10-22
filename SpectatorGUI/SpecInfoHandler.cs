@@ -35,8 +35,8 @@ namespace Mistaken.SpectatorGUI
             CustomClassDescriptors[RoleType.Scp096] = (player) =>
             {
                 var scp = player.CurrentScp as PlayableScps.Scp096;
-                var rageText = $"<br> Rage left: <color=yellow>{scp.EnrageTimeLeft}</color>s<br>Targets: <color=yellow>{scp._targets.Count}</color>";
-                var cooldownText = $"<br> Cooldown left: <color=yellow>{scp.RemainingEnrageCooldown}</color>s";
+                var rageText = $"<br> Rage left: <color=yellow>{Mathf.RoundToInt(scp.EnrageTimeLeft)}</color>s<br>Targets: <color=yellow>{Mathf.RoundToInt(scp._targets.Count)}</color>";
+                var cooldownText = $"<br> Cooldown left: <color=yellow>{Mathf.RoundToInt(scp.RemainingEnrageCooldown)}</color>s";
 
                 switch (scp.PlayerState)
                 {
@@ -416,7 +416,7 @@ namespace Mistaken.SpectatorGUI
                         }
                         else if (currentItem is MicroHid microHid)
                         {
-                            tor += $" with <color=yellow>{microHid.Energy}</color>";
+                            tor += $" with <color=yellow>{Math.Floor(microHid.Energy * 100)}%</color>";
                         }
                     }
                 }
