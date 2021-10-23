@@ -98,7 +98,8 @@ namespace Mistaken.SpectatorGUI
                         var start = DateTime.Now;
                         var respawnManager = Respawning.RespawnManager.Singleton;
 
-                        var toRespawn = RealPlayers.List.Where(p => p.IsDead && !p.IsOverwatchEnabled).Count();
+                        var toRespawnList = RealPlayers.List.Where(p => p.IsDead && !p.IsOverwatchEnabled);
+                        var toRespawn = toRespawnList.Count();
 
                         var respawningCI = Math.Min(Dynamic_maxRespawnCI, toRespawn);
                         var notrespawningCI = toRespawn - respawningCI;
@@ -113,7 +114,7 @@ namespace Mistaken.SpectatorGUI
                         {
                             if (Respawning.RespawnWaveGenerator.SpawnableTeams.TryGetValue(respawnManager.NextKnownTeam, out Respawning.SpawnableTeamHandlerBase spawnableTeam))
                             {
-                                List<Player> list = RealPlayers.List.Where(p => p.IsDead && !p.IsOverwatchEnabled).OrderBy(rh => rh.ReferenceHub.characterClassManager.DeathTime).ToList();
+                                List<Player> list = toRespawnList.OrderBy(rh => rh.ReferenceHub.characterClassManager.DeathTime).ToList();
                                 int maxRespawnablePlayers = respawnManager.NextKnownTeam == Respawning.SpawnableTeamType.ChaosInsurgency ? Dynamic_maxRespawnCI : Dynamic_maxRespawnMTF;
                                 maxRespawnablePlayers = Math.Max(maxRespawnablePlayers, 0);
 
@@ -301,6 +302,11 @@ namespace Mistaken.SpectatorGUI
         {
             yield return Timing.WaitForSeconds(1);
             int rid = RoundPlus.RoundId;
+            _ = Warhead.Controller;
+            _ = Warhead.OutsitePanel;
+            _ = Warhead.SitePanel;
+            _ = MapPlus.LureSubjectContainer;
+            _ = Events.Handlers.CustomEvents.SCP079.IsRecontained;
             while (Round.IsStarted && rid == RoundPlus.RoundId)
             {
                 yield return Timing.WaitForSeconds(5);
@@ -350,7 +356,7 @@ namespace Mistaken.SpectatorGUI
             var playersString = string.Format(PluginHandler.Instance.Translation.PlayersInfo, PlayerManager.players.Count, CustomNetworkManager.slots);
             var generatorString = string.Format(PluginHandler.Instance.Translation.GeneratorInfo, Map.ActivatedGenerators.ToString()) + (cache_nearestGenerator == null ? string.Empty : $" (<color=yellow>{Math.Round((double)(cache_nearestGenerator?.Network_syncTime ?? -1))}</color>s)");
             var overchargeString = string.Format(PluginHandler.Instance.Translation.OverchargeInfo, Events.Handlers.CustomEvents.SCP079.IsRecontained ? "<color=yellow>Recontained</color>" : "<color=yellow>Recontainment ready</color>");
-            var genString = Events.Handlers.CustomEvents.SCP079.IsBeingRecontained | Events.Handlers.CustomEvents.SCP079.IsRecontained ? overchargeString : generatorString;
+            var genString = Events.Handlers.CustomEvents.SCP079.IsBeingRecontained || Events.Handlers.CustomEvents.SCP079.IsRecontained ? overchargeString : generatorString;
             if (Warhead.IsDetonated)
                 genString = generatorString;
             var recontainmentReadyString = PluginHandler.Instance.Translation.RecontainmentReady;
