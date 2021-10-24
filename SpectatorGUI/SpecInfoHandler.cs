@@ -77,7 +77,6 @@ namespace Mistaken.SpectatorGUI
             Exiled.Events.Handlers.Server.RespawningTeam += this.Handle<Exiled.Events.EventArgs.RespawningTeamEventArgs>((ev) => this.Server_RespawningTeam(ev));
             Exiled.Events.Handlers.Player.ChangingRole += this.Handle<Exiled.Events.EventArgs.ChangingRoleEventArgs>((ev) => this.Player_ChangingRole(ev));
 
-            // Events.Handlers.CustomEvents.ChangingSpectatedPlayer += this.Handle<Events.EventArgs.ChangingSpectatedPlayerEventArgs>((ev) => this.CustomEvents_ChangingSpectatedPlayer(ev));
             this.active = true;
             Task.Run(async () =>
             {
@@ -177,12 +176,12 @@ namespace Mistaken.SpectatorGUI
                                     adminMsg = $"[<color=yellow>OVERWATCH <b>ACTIVE</b> | <color=yellow>UNKNOWN</color> overwatch time</color>]";
 
                                 outputMessage += this.InformTTR(message, player, true, adminMessage.Replace("{masterAdminMessage}", adminMsg));
-                                player.SetGUI("specInfo_observing", PseudoGUIPosition.BOTTOM, this.InformSpectating(Player.Get(player.ReferenceHub.spectatorManager.CurrentSpectatedPlayer), true));
+                                outputMessage += "<br>" + this.InformSpectating(Player.Get(player.ReferenceHub.spectatorManager.CurrentSpectatedPlayer), true);
                             }
                             else
                             {
                                 outputMessage += this.InformTTR(message, player, false, adminMessage);
-                                player.SetGUI("specInfo_observing", PseudoGUIPosition.BOTTOM, this.InformSpectating(Player.Get(player.ReferenceHub.spectatorManager.CurrentSpectatedPlayer), false));
+                                outputMessage += "<br>" + this.InformSpectating(Player.Get(player.ReferenceHub.spectatorManager.CurrentSpectatedPlayer), false);
                             }
 
                             // player.ShowHint(message, 2);
@@ -208,7 +207,6 @@ namespace Mistaken.SpectatorGUI
             Exiled.Events.Handlers.Server.RespawningTeam -= this.Handle<Exiled.Events.EventArgs.RespawningTeamEventArgs>((ev) => this.Server_RespawningTeam(ev));
             Exiled.Events.Handlers.Player.ChangingRole -= this.Handle<Exiled.Events.EventArgs.ChangingRoleEventArgs>((ev) => this.Player_ChangingRole(ev));
 
-            // Events.Handlers.CustomEvents.ChangingSpectatedPlayer -= this.Handle<Events.EventArgs.ChangingSpectatedPlayerEventArgs>((ev) => this.CustomEvents_ChangingSpectatedPlayer(ev));
             this.active = false;
         }
 
@@ -235,18 +233,11 @@ namespace Mistaken.SpectatorGUI
         private bool active;
         private bool roundStarted;
 
-        /*private void CustomEvents_ChangingSpectatedPlayer(Events.EventArgs.ChangingSpectatedPlayerEventArgs ev)
-        {
-            if (ev.NewPlayer != ev.Spectator)
-                ev.NewPlayer.SetGUI("specInfo_observing", PseudoGUIPosition.BOTTOM, this.InformSpectating(ev.NewPlayer, ev.Spectator.RemoteAdminAccess));
-        }*/
-
         private void Player_ChangingRole(Exiled.Events.EventArgs.ChangingRoleEventArgs ev)
         {
             if (ev.NewRole != RoleType.Spectator)
             {
                 ev.Player.SetGUI("specInfo", PseudoGUIPosition.MIDDLE, null);
-                ev.Player.SetGUI("specInfo_observing", PseudoGUIPosition.BOTTOM, null);
             }
         }
 
