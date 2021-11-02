@@ -54,7 +54,7 @@ namespace Mistaken.SpectatorGUI
 
         public string RespawnCIWillRespawnMarauder { get; set; } = "<color=#006826>Chaos Insurgency Maruder</color>";
 
-        public string RespawnCIWillRespawn { get; set; } = "You <color=yellow>will</color> respawn as <color=#1d6f00>Chaos Insurgent</color>";
+        public string RespawnCIWillRespawn { get; set; } = "You <color=yellow>will</color> respawn as ";
 
         public string RespawnCIWillNotRespawn { get; set; } = "You <color=yellow>will <b>not</b></color> respawn";
 
