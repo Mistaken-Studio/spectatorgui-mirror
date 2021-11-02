@@ -72,10 +72,10 @@ namespace Mistaken.SpectatorGUI
         /// <inheritdoc/>
         public override void OnEnable()
         {
-            Exiled.Events.Handlers.Server.RoundStarted += this.Handle(() => this.Server_RoundStarted(), "RoundStart");
-            Exiled.Events.Handlers.Server.RestartingRound += this.Handle(() => this.Server_RestartingRound(), "RoundRestart");
-            Exiled.Events.Handlers.Server.RespawningTeam += this.Handle<Exiled.Events.EventArgs.RespawningTeamEventArgs>((ev) => this.Server_RespawningTeam(ev));
-            Exiled.Events.Handlers.Player.ChangingRole += this.Handle<Exiled.Events.EventArgs.ChangingRoleEventArgs>((ev) => this.Player_ChangingRole(ev));
+            Exiled.Events.Handlers.Server.RoundStarted += this.Server_RoundStarted;
+            Exiled.Events.Handlers.Server.RestartingRound += this.Server_RestartingRound;
+            Exiled.Events.Handlers.Server.RespawningTeam += this.Server_RespawningTeam;
+            Exiled.Events.Handlers.Player.ChangingRole += this.Player_ChangingRole;
 
             // Events.Handlers.CustomEvents.ChangingSpectatedPlayer += this.Handle<Events.EventArgs.ChangingSpectatedPlayerEventArgs>((ev) => this.CustomEvents_ChangingSpectatedPlayer(ev));
             this.active = true;
@@ -95,7 +95,7 @@ namespace Mistaken.SpectatorGUI
                         continue;
                     try
                     {
-                        var start = DateTime.Now;
+                        var start = DateTime.UtcNow;
                         var respawnManager = Respawning.RespawnManager.Singleton;
 
                         var toRespawnList = RealPlayers.List.Where(p => p.IsDead && !p.IsOverwatchEnabled);
@@ -189,7 +189,7 @@ namespace Mistaken.SpectatorGUI
                             player.SetGUI("specInfo", PseudoGUIPosition.MIDDLE, "<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>" + outputMessage);
                         }
 
-                        MasterHandler.LogTime("SpecInfoHandler", "TTRUpdate", start, DateTime.Now);
+                        MasterHandler.LogTime("SpecInfoHandler", "TTRUpdate", start, DateTime.UtcNow);
                     }
                     catch (System.Exception ex)
                     {
@@ -203,10 +203,10 @@ namespace Mistaken.SpectatorGUI
         /// <inheritdoc/>
         public override void OnDisable()
         {
-            Exiled.Events.Handlers.Server.RoundStarted -= this.Handle(() => this.Server_RoundStarted(), "RoundStart");
-            Exiled.Events.Handlers.Server.RestartingRound -= this.Handle(() => this.Server_RestartingRound(), "RoundRestart");
-            Exiled.Events.Handlers.Server.RespawningTeam -= this.Handle<Exiled.Events.EventArgs.RespawningTeamEventArgs>((ev) => this.Server_RespawningTeam(ev));
-            Exiled.Events.Handlers.Player.ChangingRole -= this.Handle<Exiled.Events.EventArgs.ChangingRoleEventArgs>((ev) => this.Player_ChangingRole(ev));
+            Exiled.Events.Handlers.Server.RoundStarted -= this.Server_RoundStarted;
+            Exiled.Events.Handlers.Server.RestartingRound -= this.Server_RestartingRound;
+            Exiled.Events.Handlers.Server.RespawningTeam -= this.Server_RespawningTeam;
+            Exiled.Events.Handlers.Player.ChangingRole -= this.Player_ChangingRole;
 
             // Events.Handlers.CustomEvents.ChangingSpectatedPlayer -= this.Handle<Events.EventArgs.ChangingSpectatedPlayerEventArgs>((ev) => this.CustomEvents_ChangingSpectatedPlayer(ev));
             this.active = false;
@@ -306,7 +306,7 @@ namespace Mistaken.SpectatorGUI
             _ = Warhead.OutsitePanel;
             _ = Warhead.SitePanel;
             _ = MapPlus.LureSubjectContainer;
-            _ = Events.Handlers.CustomEvents.SCP079.IsRecontained;
+            _ = MapPlus.IsSCP079Recontained;
             while (Round.IsStarted && rid == RoundPlus.RoundId)
             {
                 yield return Timing.WaitForSeconds(5);
@@ -355,8 +355,8 @@ namespace Mistaken.SpectatorGUI
             var specatorString = spectators < 2 ? PluginHandler.Instance.Translation.OnlySpectatorInfo : string.Format(PluginHandler.Instance.Translation.SpectatorInfo, spectators - 1);
             var playersString = string.Format(PluginHandler.Instance.Translation.PlayersInfo, PlayerManager.players.Count, CustomNetworkManager.slots);
             var generatorString = string.Format(PluginHandler.Instance.Translation.GeneratorInfo, Map.ActivatedGenerators.ToString()) + (cache_nearestGenerator == null ? string.Empty : $" (<color=yellow>{Math.Round((double)(cache_nearestGenerator?.Network_syncTime ?? -1))}</color>s)");
-            var overchargeString = string.Format(PluginHandler.Instance.Translation.OverchargeInfo, Events.Handlers.CustomEvents.SCP079.IsRecontained ? "<color=yellow>Recontained</color>" : "<color=yellow>Recontainment ready</color>");
-            var genString = Events.Handlers.CustomEvents.SCP079.IsBeingRecontained || Events.Handlers.CustomEvents.SCP079.IsRecontained ? overchargeString : generatorString;
+            var overchargeString = string.Format(PluginHandler.Instance.Translation.OverchargeInfo, MapPlus.IsSCP079Recontained ? "<color=yellow>Recontained</color>" : "<color=yellow>Recontainment ready</color>");
+            var genString = MapPlus.IsSCP079ReadyForRecontainment || MapPlus.IsSCP079Recontained ? overchargeString : generatorString;
             if (Warhead.IsDetonated)
                 genString = generatorString;
             var recontainmentReadyString = PluginHandler.Instance.Translation.RecontainmentReady;
