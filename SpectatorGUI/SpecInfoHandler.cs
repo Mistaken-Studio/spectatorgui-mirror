@@ -249,6 +249,7 @@ namespace Mistaken.SpectatorGUI
             if (ev.NewRole != RoleType.Spectator)
             {
                 ev.Player.SetGUI("specInfo", PseudoGUIPosition.MIDDLE, null);
+                MEC.Timing.CallDelayed(1, () => ev.Player.SetGUI("specInfo", PseudoGUIPosition.MIDDLE, null));
             }
         }
 
