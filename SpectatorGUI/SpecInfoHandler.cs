@@ -167,9 +167,9 @@ namespace Mistaken.SpectatorGUI
                                 if (player.RemoteAdminAccess)
                                 {
                                     string adminMsg = "{masterAdminMessage}";
-                                    if (player.GetSessionVar<bool>(SessionVarType.LONG_OVERWATCH))
+                                    if (player.GetSessionVariable<bool>(SessionVarType.LONG_OVERWATCH))
                                         adminMsg = "[<color=red>LONG OVERWATCH <b><color=yellow>ACTIVE</color></b></color>]";
-                                    else if (player.IsOverwatchEnabled && player.TryGetSessionVariable<DateTime>("OVERWATCH_START", out DateTime checkTime))
+                                    else if (player.IsOverwatchEnabled && player.TryGetSessionVariable(SessionVarType.OVERWATCH_START_TIME, out DateTime checkTime))
                                     {
                                         var diff = checkTime.AddMinutes(5) - DateTime.Now;
                                         adminMsg = $"[<color=yellow>OVERWATCH <b>ACTIVE</b> | {diff.Minutes:00}<color=yellow>:</color>{diff.Seconds:00}</color>]";
