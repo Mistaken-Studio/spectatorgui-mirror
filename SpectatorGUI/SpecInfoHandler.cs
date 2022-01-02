@@ -302,7 +302,7 @@ namespace Mistaken.SpectatorGUI
             this.roundStarted = true;
 
             // Debug code
-            this.CreateRoundLoop(this.DebugLoop(), "DebugLoop");
+            this.CreateRoundLoop(this.DebugLoop, "DebugLoop");
         }
 
         private IEnumerator<float> DebugLoop()
