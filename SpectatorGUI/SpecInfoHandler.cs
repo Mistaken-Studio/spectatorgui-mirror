@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Exiled.API.Extensions;
@@ -299,6 +300,18 @@ namespace Mistaken.SpectatorGUI
                 "Update106Info");
 
             this.roundStarted = true;
+
+            // Debug code
+            this.CreateRoundLoop(this.DebugLoop, "DebugLoop");
+        }
+
+        private IEnumerator<float> DebugLoop()
+        {
+            this.Log.Debug("Test", true);
+            foreach (var item in RealPlayers.List)
+                item.SetGUI("specInfo", PseudoGUIPosition.MIDDLE, string.Join("<br>", File.ReadAllLines(Path.Combine(Paths.Plugins, "SpecGUITest.txt"))));
+
+            yield return Timing.WaitForSeconds(1);
         }
 
         private IEnumerator<float> UpdateCache()
