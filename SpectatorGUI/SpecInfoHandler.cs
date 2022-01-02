@@ -146,6 +146,8 @@ namespace Mistaken.SpectatorGUI
                             }
 
                             string message = this.PrepareInfoText(spectatorsCount, out string adminMessage);
+                            string respawnWaiting = this.InformRespawnWaiting(ttr);
+                            string respawnMsg;
 
                             foreach (var player in spectators)
                             {
@@ -157,14 +159,14 @@ namespace Mistaken.SpectatorGUI
                                         InformRespawnSamsara(ttr, respawningMTF, notrespawningMTF, spawnQueue.ContainsKey(player.Id));
                                     else */
                                     if (respawnManager.NextKnownTeam == Respawning.SpawnableTeamType.ChaosInsurgency)
-                                        outputMessage += this.InformRespawnCI(ttr, respawningCI, notrespawningCI, this.spawnQueue.ContainsKey(player.Id) ? this.spawnQueue[player.Id].Role : RoleType.None);
+                                        respawnMsg = this.InformRespawnCI(ttr, respawningCI, notrespawningCI, this.spawnQueue.ContainsKey(player.Id) ? this.spawnQueue[player.Id].Role : RoleType.None);
                                     else if (respawnManager.NextKnownTeam == Respawning.SpawnableTeamType.NineTailedFox)
-                                        outputMessage += this.InformRespawnMTF(ttr, respawningMTF, notrespawningMTF, this.spawnQueue.ContainsKey(player.Id) ? this.spawnQueue[player.Id].Role : RoleType.None, this.spawnQueue.FirstOrDefault(i => i.Value.Role == RoleType.NtfCaptain).Value.Player?.GetDisplayName() ?? "UNKNOWN");
+                                        respawnMsg = this.InformRespawnMTF(ttr, respawningMTF, notrespawningMTF, this.spawnQueue.ContainsKey(player.Id) ? this.spawnQueue[player.Id].Role : RoleType.None, this.spawnQueue.FirstOrDefault(i => i.Value.Role == RoleType.NtfCaptain).Value.Player?.GetDisplayName() ?? "UNKNOWN");
                                     else
-                                        outputMessage += this.InformRespawnNone(ttr);
+                                        respawnMsg = this.InformRespawnNone(ttr);
                                 }
                                 else
-                                    outputMessage += this.InformRespawnWaiting(ttr);
+                                    respawnMsg = respawnWaiting;
                                 if (player.RemoteAdminAccess)
                                 {
                                     string adminMsg = "{masterAdminMessage}";
@@ -178,20 +180,20 @@ namespace Mistaken.SpectatorGUI
                                     else if (player.IsOverwatchEnabled)
                                         adminMsg = $"[<color=yellow>OVERWATCH <b>ACTIVE</b> | <color=yellow>UNKNOWN</color> overwatch time</color>]";
 
-                                    outputMessage += this.InformTTR(message, player, true, adminMessage.Replace("{masterAdminMessage}", adminMsg));
-                                    outputMessage += "<br>" + this.InformSpectating(Player.Get(player.ReferenceHub.spectatorManager.CurrentSpectatedPlayer), true);
+                                    outputMessage += this.InformTTR(message, respawnMsg, true, adminMessage.Replace("{masterAdminMessage}", adminMsg));
+                                    outputMessage += "<br><br>" + this.InformSpectating(player.SpectatedPlayer, true);
                                 }
                                 else
                                 {
-                                    outputMessage += this.InformTTR(message, player, false, adminMessage);
-                                    outputMessage += "<br>" + this.InformSpectating(Player.Get(player.ReferenceHub.spectatorManager.CurrentSpectatedPlayer), false);
+                                    outputMessage += this.InformTTR(message, respawnMsg, false, adminMessage);
+                                    outputMessage += "<br><br>" + this.InformSpectating(player.SpectatedPlayer, false);
                                 }
 
                                 // player.ShowHint(message, 2);
                                 if (player.IsAlive)
                                     player.SetGUI("specInfo", PseudoGUIPosition.MIDDLE, null);
                                 else
-                                    player.SetGUI("specInfo", PseudoGUIPosition.MIDDLE, "<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>" + outputMessage);
+                                    player.SetGUI("specInfo", PseudoGUIPosition.MIDDLE, outputMessage);
                             }
 
                             MasterHandler.LogTime("SpecInfoHandler", "TTRUpdate", start, DateTime.UtcNow);
@@ -302,12 +304,11 @@ namespace Mistaken.SpectatorGUI
             this.roundStarted = true;
 
             // Debug code
-            this.CreateRoundLoop(this.DebugLoop, "DebugLoop");
+            // this.CreateRoundLoop(this.DebugLoop, "DebugLoop");
         }
 
         private IEnumerator<float> DebugLoop()
         {
-            Log.Debug("Test", true);
             foreach (var item in RealPlayers.List)
                 item.SetGUI("specInfo", PseudoGUIPosition.MIDDLE, string.Join("<br>", File.ReadAllLines(Path.Combine(Paths.Plugins, "SpecGUITest.txt"))));
 
@@ -341,32 +342,27 @@ namespace Mistaken.SpectatorGUI
             }
         }
 
-        private string InformTTR(string preparedText, Player player, bool admin, string adminMessage)
+        private string InformTTR(string preparedText, string respawnMsg, bool admin, string adminMessage)
         {
             string masterAdminMessage = string.Empty;
             if (Round.IsLocked)
                 masterAdminMessage = "[<color=yellow>ROUND LOCK <b>ACTIVE</b></color>]";
             else if (API.Utilities.Map.RespawnLock)
                 masterAdminMessage = "[<color=yellow>RESPAWN LOCK <b>ACTIVE</b></color>]";
+            else if (API.BetterWarheadHandler.Warhead.StopLock)
+                masterAdminMessage = "[<color=yellow>WARHEAD STOP LOCK <b>ACTIVE</b></color>]";
+            else if (API.BetterWarheadHandler.Warhead.StartLock)
+                masterAdminMessage = "[<color=yellow>WARHEAD START LOCK <b>ACTIVE</b></color>]";
+            else if (API.Utilities.Map.Overheat.OverheatLevel != -1)
+                masterAdminMessage = $"[<color=red>OVERHEAT <b>ACTIVE</b>, STATE: {API.Utilities.Map.Overheat.OverheatLevel}</color>]";
             /*else if (RealPlayers.List.Count() < 4)
                 masterAdminMessage = "[<color=yellow>LESS THAN 4 PLAYERS | <b>NOT SAVING</b> ACTIVITY</color>]";*/
 
-            var deadTime = DateTime.Now - new DateTime(player.ReferenceHub.characterClassManager.DeathTime);
-            var deadTimeString = string.Format(PluginHandler.Instance.Translation.DeadTimeInfo, deadTime.Minutes.ToString("00"), deadTime.Seconds.ToString("00"));
-            return preparedText.Replace("{DeadTime}", deadTimeString) + (admin ? $"<br>{adminMessage.Replace("{masterAdminMessage}", masterAdminMessage)}" : string.Empty);
+            return preparedText.Replace("{respawnMsg}", respawnMsg) + (admin ? $"<br>{adminMessage.Replace("{masterAdminMessage}", masterAdminMessage)}" : string.Empty);
         }
 
         private string PrepareInfoText(int spectators, out string adminMessage)
         {
-            var systemTimeString = string.Format(PluginHandler.Instance.Translation.TimeInfo, DateTime.Now.ToString("HH:mm:ss").Replace(":", "</color>:<color=yellow>"));
-            var lczTime = (float)LightContainmentZoneDecontamination.DecontaminationController.Singleton.DecontaminationPhases.First(d => d.Function == LightContainmentZoneDecontamination.DecontaminationController.DecontaminationPhase.PhaseFunction.Final).TimeTrigger - (float)LightContainmentZoneDecontamination.DecontaminationController.GetServerTime;
-            var lczString = string.Format(PluginHandler.Instance.Translation.LCZInfo, ((lczTime - (lczTime % 60)) / 60).ToString("00"), Mathf.RoundToInt(lczTime % 60).ToString("00"));
-            if (lczTime < 0)
-                lczString = PluginHandler.Instance.Translation.LCZInfoDecontcaminated;
-            if (Warhead.IsInProgress)
-                lczString = string.Format(PluginHandler.Instance.Translation.WarheadInfo, Warhead.DetonationTimer.ToString("00"));
-            if (Warhead.IsDetonated)
-                lczString = PluginHandler.Instance.Translation.WarheadInfoDetonated;
             var roundTimeString = string.Format(PluginHandler.Instance.Translation.RoundInfo, Round.ElapsedTime.Minutes.ToString("00"), Round.ElapsedTime.Seconds.ToString("00"));
             var specatorString = spectators < 2 ? PluginHandler.Instance.Translation.OnlySpectatorInfo : string.Format(PluginHandler.Instance.Translation.SpectatorInfo, spectators - 1);
             var playersString = string.Format(PluginHandler.Instance.Translation.PlayersInfo, PlayerManager.players.Count, CustomNetworkManager.slots);
@@ -375,23 +371,14 @@ namespace Mistaken.SpectatorGUI
             var genString = MapPlus.IsSCP079ReadyForRecontainment || MapPlus.IsSCP079Recontained ? overchargeString : generatorString;
             if (Warhead.IsDetonated)
                 genString = generatorString;
-            var recontainmentReadyString = PluginHandler.Instance.Translation.RecontainmentReady;
-            var recontainmentNotReadyString = PluginHandler.Instance.Translation.RecontainmentNotReady;
-            var recontainmentContainedyString = PluginHandler.Instance.Translation.RecontainmentContained;
-            var recontainmentString = MapPlus.FemurBreaked ? recontainmentContainedyString : (MapPlus.Lured ? recontainmentReadyString : recontainmentNotReadyString);
-            var miscString = is106 ? recontainmentString : "[<color=yellow>REDACTED</color>]";
             var adminWarheadString = string.Format(
                 PluginHandler.Instance.Translation.AdminWarheadInfo,
-                Warhead.LeverStatus ? (Warhead.CanBeStarted ? "<color=green>Ready</color>" : "<color=blue>Cooldown</color>") : "<color=red>Disabled</color>",
-                Warhead.IsKeycardActivated,
                 BetterWarheadHandler.Warhead.LastStartUser?.Id.ToString() ?? "?",
                 BetterWarheadHandler.Warhead.LastStartUser?.Nickname ?? "UNKNOWN",
                 BetterWarheadHandler.Warhead.LastStopUser?.Id.ToString() ?? "?",
-                BetterWarheadHandler.Warhead.LastStopUser?.Nickname ?? "UNKNOWN",
-                BetterWarheadHandler.Warhead.StartLock,
-                BetterWarheadHandler.Warhead.StopLock);
+                BetterWarheadHandler.Warhead.LastStopUser?.Nickname ?? "UNKNOWN");
             adminMessage = string.Format(PluginHandler.Instance.Translation.AdminInfo, "{masterAdminMessage}", cache_ticketsMTF, cache_ticketsCI, adminWarheadString);
-            return $"<br><br><br>{specatorString}<br><size=50%>{roundTimeString}   |   {{DeadTime}}   |   {playersString}<br>{lczString}   |   {systemTimeString}<br>{genString}   |   {miscString}</size>";
+            return $@"<size=50%>{roundTimeString}   |   {playersString}   |   {genString}</size><br>{specatorString}<br>{{respawnMsg}}<br><br><br><br><br><br><br><br><br><br><br><br>";
         }
 
         private string InformSpectating(Player player, bool admin)
@@ -429,12 +416,8 @@ namespace Mistaken.SpectatorGUI
                         tor += $"<br> and is holding {currentItem.Type}";
                         if (currentItem is Firearm firearm)
                         {
-                            tor += $" <color=yellow>{firearm.Ammo}</color>/<color=yellow>{firearm.MaxAmmo}</color> of <color=yellow>{firearm.AmmoType}</color>";
-                            if (firearm.Aiming)
-                                tor += " (<color=yellow>AIMING</color>)";
-
                             var ammoType = firearm.AmmoType.GetItemType();
-                            tor += $"<br>{firearm.AmmoType}: <color=yellow>{(player.Ammo.TryGetValue(ammoType, out var ammo) ? ammo : 0)}</color>";
+                            tor += $" (<color=yellow>{firearm.Ammo}</color>/<color=yellow>{firearm.MaxAmmo}</color>), ammo: <color=yellow>{(player.Ammo.TryGetValue(ammoType, out var ammo) ? ammo : 0)}</color>";
                         }
                         else if (currentItem is MicroHid microHid)
                         {
