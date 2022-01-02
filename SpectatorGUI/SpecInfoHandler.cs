@@ -302,17 +302,6 @@ namespace Mistaken.SpectatorGUI
                 "Update106Info");
 
             this.roundStarted = true;
-
-            // Debug code
-            // this.CreateRoundLoop(this.DebugLoop, "DebugLoop");
-        }
-
-        private IEnumerator<float> DebugLoop()
-        {
-            foreach (var item in RealPlayers.List)
-                item.SetGUI("specInfo", PseudoGUIPosition.MIDDLE, string.Join("<br>", File.ReadAllLines(Path.Combine(Paths.Plugins, "SpecGUITest.txt"))));
-
-            yield return Timing.WaitForSeconds(1);
         }
 
         private IEnumerator<float> UpdateCache()
