@@ -307,7 +307,7 @@ namespace Mistaken.SpectatorGUI
 
         private IEnumerator<float> DebugLoop()
         {
-            Log.Debug("Test", true);
+            this.Log.Debug("Test", true);
             foreach (var item in RealPlayers.List)
                 item.SetGUI("specInfo", PseudoGUIPosition.MIDDLE, string.Join("<br>", File.ReadAllLines(Path.Combine(Paths.Plugins, "SpecGUITest.txt"))));
 
