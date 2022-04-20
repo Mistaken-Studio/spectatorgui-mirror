@@ -181,12 +181,12 @@ namespace Mistaken.SpectatorGUI
                                         adminMsg = $"[<color=yellow>OVERWATCH <b>ACTIVE</b> | <color=yellow>UNKNOWN</color> overwatch time</color>]";
 
                                     outputMessage += this.InformTTR(message, respawnMsg, true, adminMessage.Replace("{masterAdminMessage}", adminMsg));
-                                    outputMessage += "<br><br>" + this.InformSpectating(player.SpectatedPlayer, true);
+                                    outputMessage += "<br><br>" + this.InformSpectating(player.GetSpectatedPlayer(), true);
                                 }
                                 else
                                 {
                                     outputMessage += this.InformTTR(message, respawnMsg, false, adminMessage);
-                                    outputMessage += "<br><br>" + this.InformSpectating(player.SpectatedPlayer, false);
+                                    outputMessage += "<br><br>" + this.InformSpectating(player.GetSpectatedPlayer(), false);
                                 }
 
                                 // player.ShowHint(message, 2);
@@ -355,7 +355,7 @@ namespace Mistaken.SpectatorGUI
             var roundTimeString = string.Format(PluginHandler.Instance.Translation.RoundInfo, Round.ElapsedTime.Minutes.ToString("00"), Round.ElapsedTime.Seconds.ToString("00"));
             var specatorString = spectators < 2 ? PluginHandler.Instance.Translation.OnlySpectatorInfo : string.Format(PluginHandler.Instance.Translation.SpectatorInfo, spectators - 1);
             var playersString = string.Format(PluginHandler.Instance.Translation.PlayersInfo, PlayerManager.players.Count, CustomNetworkManager.slots);
-            var generatorString = string.Format(PluginHandler.Instance.Translation.GeneratorInfo, Map.ActivatedGenerators.ToString()) + (cache_nearestGenerator == null ? string.Empty : $" (<color=yellow>{Math.Round((double)(cache_nearestGenerator?.Network_syncTime ?? -1))}</color>s)");
+            var generatorString = string.Format(PluginHandler.Instance.Translation.GeneratorInfo, Generator.List.Where(x => x.IsEngaged).Count().ToString()) + (cache_nearestGenerator == null ? string.Empty : $" (<color=yellow>{Math.Round((double)(cache_nearestGenerator?.Network_syncTime ?? -1))}</color>s)");
             var overchargeString = string.Format(PluginHandler.Instance.Translation.OverchargeInfo, MapPlus.IsSCP079Recontained ? "<color=yellow>Recontained</color>" : "<color=yellow>Recontainment ready</color>");
             var genString = MapPlus.IsSCP079ReadyForRecontainment || MapPlus.IsSCP079Recontained ? overchargeString : generatorString;
             if (Warhead.IsDetonated)
@@ -375,7 +375,7 @@ namespace Mistaken.SpectatorGUI
             if (player?.IsDead ?? true || (!player?.IsConnected ?? true))
                 return string.Empty;
 
-            var roleName = $"<color={player.RoleColor.ToHex()}>{player.Role}</color>";
+            var roleName = $"<color={player.RankColor}>{player.Role}</color>";
 
             if (CustomRole.TryGet(player, out var roles))
             {

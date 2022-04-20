@@ -28,7 +28,7 @@ namespace Mistaken.SpectatorGUI
         public override PluginPriority Priority => PluginPriority.Default;
 
         /// <inheritdoc/>
-        public override Version RequiredExiledVersion => new Version(4, 1, 2);
+        public override Version RequiredExiledVersion => new Version(5, 0, 0);
 
 #pragma warning disable SA1202 // Elements should be ordered by access
         private Version version;
