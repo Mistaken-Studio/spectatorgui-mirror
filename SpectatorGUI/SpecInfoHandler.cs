@@ -378,10 +378,7 @@ namespace Mistaken.SpectatorGUI
             var roleName = $"<color=#{ColorUtility.ToHtmlStringRGB(player.Role.Color)}>{player.Role.Type}</color>";
 
             if (CustomRole.TryGet(player, out var roles))
-            {
-                if (roles.Count > 0)
-                    roleName = string.Join(", ", roles.Select(x => x.Name));
-            }
+                roleName = string.Join(", ", roles.Select(x => x.Name));
 
             string tor = $"{player.GetDisplayName()} is <color=yellow>playing</color> as {roleName}";
             if (!CustomClassDescriptors.TryGetValue(player.Role, out var handler))
