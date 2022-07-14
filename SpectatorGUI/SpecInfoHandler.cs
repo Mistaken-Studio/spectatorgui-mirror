@@ -375,7 +375,7 @@ namespace Mistaken.SpectatorGUI
             if (player?.IsDead ?? true || (!player?.IsConnected ?? true))
                 return string.Empty;
 
-            var roleName = $"<color={player.RankColor}>{player.Role}</color>";
+            var roleName = $"<color=#{ColorUtility.ToHtmlStringRGB(player.Role.Color)}>{player.Role.Type}</color>";
 
             if (CustomRole.TryGet(player, out var roles))
             {
