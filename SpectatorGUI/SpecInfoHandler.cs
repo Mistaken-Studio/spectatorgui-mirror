@@ -20,6 +20,7 @@ using Mistaken.API;
 using Mistaken.API.Diagnostics;
 using Mistaken.API.Extensions;
 using Mistaken.API.GUI;
+using Mistaken.SpectatorGUI.Integrations;
 using UnityEngine;
 
 namespace Mistaken.SpectatorGUI
@@ -68,18 +69,19 @@ namespace Mistaken.SpectatorGUI
             return $"<br>Id: {player.Id}<br>Cuffed: {IsCuffed(player)}";
         };
 
-        private static bool _betterScp049Enabled = false;
-
         private static bool IsCuffed(Player player)
         {
             if(player.Role.Team != Team.SCP)
                 return player.Inventory.IsDisarmed();
-            else
-                return _betterScp049Enabled && player.Role == RoleType.Scp049 && Mistaken.BetterSCP.SCP049.Commands.DisarmCommand.DisarmedScps.ContainsValue(player);
+            if (BetterSCP049Integration.Enabled && player.Role == RoleType.Scp049)
+                return BetterSCP049Integration.IsCuffed(player);
+            return false;
         }
 
         /// <inheritdoc/>
         public override string Name => "SpecInfo";
+
+        private BetterSCP049Integration scp049Integration;
 
         /// <inheritdoc/>
         public override void OnEnable()
@@ -88,8 +90,7 @@ namespace Mistaken.SpectatorGUI
             Exiled.Events.Handlers.Server.RestartingRound += this.Server_RestartingRound;
             Exiled.Events.Handlers.Server.RespawningTeam += this.Server_RespawningTeam;
             Exiled.Events.Handlers.Player.ChangingRole += this.Player_ChangingRole;
-            Events.Handlers.CustomEvents.LoadedPlugins -= this.CustomEvents_LoadedPlugins;
-
+            scp049Integration = new BetterSCP049Integration();
             this.active = true;
             Task.Run(async () =>
             {
@@ -232,8 +233,8 @@ namespace Mistaken.SpectatorGUI
             Exiled.Events.Handlers.Server.RestartingRound -= this.Server_RestartingRound;
             Exiled.Events.Handlers.Server.RespawningTeam -= this.Server_RespawningTeam;
             Exiled.Events.Handlers.Player.ChangingRole -= this.Player_ChangingRole;
-            Events.Handlers.CustomEvents.LoadedPlugins -= this.CustomEvents_LoadedPlugins;
 
+            scp049Integration = null;
             this.active = false;
         }
 
@@ -317,12 +318,6 @@ namespace Mistaken.SpectatorGUI
                 "Update106Info");
 
             this.roundStarted = true;
-        }
-
-        private void CustomEvents_LoadedPlugins()
-        {
-            if(Exiled.Loader.Loader.Plugins.Any(x => x.Name == "BetterSCP-SCP049" && x.Config.IsEnabled))
-                _betterScp049Enabled = true;
         }
 
         private IEnumerator<float> UpdateCache()
