@@ -7,7 +7,6 @@
 using System;
 using Exiled.API.Enums;
 using Exiled.API.Features;
-using Exiled.API.Interfaces;
 using HarmonyLib;
 
 namespace Mistaken.SpectatorGUI
@@ -28,7 +27,7 @@ namespace Mistaken.SpectatorGUI
         public override PluginPriority Priority => PluginPriority.Default;
 
         /// <inheritdoc/>
-        public override Version RequiredExiledVersion => new Version(5, 0, 0);
+        public override Version RequiredExiledVersion => new(5, 0, 0);
 
 #pragma warning disable SA1202 // Elements should be ordered by access
         private Version version;
@@ -53,7 +52,7 @@ namespace Mistaken.SpectatorGUI
             this.harmony = new Harmony("mistaken.spectatrgui");
             this.harmony.PatchAll();
 
-            new SpecInfoHandler(this);
+            _ = new SpecInfoHandler(this);
 
             API.Diagnostics.Module.OnEnable(this);
 

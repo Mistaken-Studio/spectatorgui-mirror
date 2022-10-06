@@ -6,18 +6,11 @@
 
 using Exiled.API.Interfaces;
 
+// ReSharper disable InconsistentNaming
 namespace Mistaken.SpectatorGUI
 {
     internal class Translation : ITranslation
     {
-        public string LCZInfo { get; set; } = "LCZ decontamination in <color=yellow>{0}</color>m <color=yellow>{1}</color>s";
-
-        public string LCZInfoDecontcaminated { get; set; } = "LCZ <color=yellow>DECONTAMINATED</color>";
-
-        public string WarheadInfo { get; set; } = "Warhead detonation in proggress <color=yellow>{0}</color>s";
-
-        public string WarheadInfoDetonated { get; set; } = "Warhead <color=yellow>detonated</color>";
-
         public string RoundInfo { get; set; } = "Round is <color=yellow>{0}</color>m <color=yellow>{1}</color>s long";
 
         public string RespawnInfo { get; set; } = "<size=150%>Respawn in <color=yellow>{0}</color>m <color=yellow>{1}</color>s</size><br><br><br><br><br><br><br>";

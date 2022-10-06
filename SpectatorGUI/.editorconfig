@@ -11,3 +11,15 @@ dotnet_diagnostic.SA1310.severity = none
 
 # SA1520: Use braces consistently
 dotnet_diagnostic.SA1520.severity = none
+
+# SA1000: Keywords should be spaced correctly
+dotnet_diagnostic.SA1000.severity = silent
+
+# IDE0058: Wartość wyrażenia nie jest nigdy używana.
+dotnet_diagnostic.IDE0058.severity = suggestion
+
+# SA1519: Braces should not be omitted from multi-line child statement
+dotnet_diagnostic.SA1519.severity = warning
+
+# SA1118: Parameter should not span multiple lines
+dotnet_diagnostic.SA1118.severity = silent

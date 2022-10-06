@@ -7,6 +7,8 @@
 using System.ComponentModel;
 using Mistaken.Updater.Config;
 
+#pragma warning disable CS0618
+
 namespace Mistaken.SpectatorGUI
 {
     /// <inheritdoc/>
