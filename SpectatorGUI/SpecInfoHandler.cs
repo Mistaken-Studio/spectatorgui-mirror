@@ -81,8 +81,6 @@ namespace Mistaken.SpectatorGUI
         /// <inheritdoc/>
         public override string Name => "SpecInfo";
 
-        private BetterSCP049Integration scp049Integration;
-
         /// <inheritdoc/>
         public override void OnEnable()
         {
@@ -90,7 +88,7 @@ namespace Mistaken.SpectatorGUI
             Exiled.Events.Handlers.Server.RestartingRound += this.Server_RestartingRound;
             Exiled.Events.Handlers.Server.RespawningTeam += this.Server_RespawningTeam;
             Exiled.Events.Handlers.Player.ChangingRole += this.Player_ChangingRole;
-            scp049Integration = new BetterSCP049Integration();
+            Events.Handlers.CustomEvents.LoadedPlugins -= this.CustomEvents_LoadedPlugins;
             this.active = true;
             Task.Run(async () =>
             {
@@ -233,8 +231,8 @@ namespace Mistaken.SpectatorGUI
             Exiled.Events.Handlers.Server.RestartingRound -= this.Server_RestartingRound;
             Exiled.Events.Handlers.Server.RespawningTeam -= this.Server_RespawningTeam;
             Exiled.Events.Handlers.Player.ChangingRole -= this.Player_ChangingRole;
+            Events.Handlers.CustomEvents.LoadedPlugins -= this.CustomEvents_LoadedPlugins;
 
-            scp049Integration = null;
             this.active = false;
         }
 
@@ -318,6 +316,12 @@ namespace Mistaken.SpectatorGUI
                 "Update106Info");
 
             this.roundStarted = true;
+        }
+
+        private void CustomEvents_LoadedPlugins()
+        {
+            if(Exiled.Loader.Loader.Plugins.Any(x => x.Name == "BetterSCP-SCP049" && x.Config.IsEnabled))
+                BetterSCP049Integration.Enabled = true;
         }
 
         private IEnumerator<float> UpdateCache()
