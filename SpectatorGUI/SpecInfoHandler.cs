@@ -14,6 +14,7 @@ using Exiled.API.Features;
 using Exiled.API.Features.Items;
 using Exiled.CustomItems.API.Features;
 using Exiled.CustomRoles.API.Features;
+using InventorySystem.Disarming;
 using MEC;
 using Mistaken.API;
 using Mistaken.API.Diagnostics;
@@ -64,8 +65,18 @@ namespace Mistaken.SpectatorGUI
         /// </summary>
         public static Func<Player, string> AdminDescriptor { get; set; } = (player) =>
         {
-            return $"<br>Id: {player.Id}";
+            return $"<br>Id: {player.Id}<br>Cuffed: {IsCuffed(player)}";
         };
+
+        private static bool _betterScp049Enabled = false;
+
+        private static bool IsCuffed(Player player)
+        {
+            if(player.Role.Team != Team.SCP)
+                return player.Inventory.IsDisarmed();
+            else
+                return _betterScp049Enabled && player.Role == RoleType.Scp049 && Mistaken.BetterSCP.SCP049.Commands.DisarmCommand.DisarmedScps.ContainsValue(player);
+        }
 
         /// <inheritdoc/>
         public override string Name => "SpecInfo";
@@ -77,6 +88,7 @@ namespace Mistaken.SpectatorGUI
             Exiled.Events.Handlers.Server.RestartingRound += this.Server_RestartingRound;
             Exiled.Events.Handlers.Server.RespawningTeam += this.Server_RespawningTeam;
             Exiled.Events.Handlers.Player.ChangingRole += this.Player_ChangingRole;
+            Exiled.Events.Handlers.Server.WaitingForPlayers += this.Server_WaitingForPlayers;
 
             this.active = true;
             Task.Run(async () =>
@@ -220,9 +232,12 @@ namespace Mistaken.SpectatorGUI
             Exiled.Events.Handlers.Server.RestartingRound -= this.Server_RestartingRound;
             Exiled.Events.Handlers.Server.RespawningTeam -= this.Server_RespawningTeam;
             Exiled.Events.Handlers.Player.ChangingRole -= this.Player_ChangingRole;
+            Exiled.Events.Handlers.Server.WaitingForPlayers -= this.Server_WaitingForPlayers;
 
             this.active = false;
         }
+
+
 
         internal SpecInfoHandler(PluginHandler p)
             : base(p)
@@ -302,6 +317,13 @@ namespace Mistaken.SpectatorGUI
                 "Update106Info");
 
             this.roundStarted = true;
+        }
+
+        private void Server_WaitingForPlayers()
+        {
+            if(Exiled.Loader.Loader.Plugins.Any(x => x.Name == "BetterSCP-SCP049" && x.Config.IsEnabled))
+                _betterScp049Enabled = true;
+            Exiled.Events.Handlers.Server.WaitingForPlayers -= this.Server_WaitingForPlayers;
         }
 
         private IEnumerator<float> UpdateCache()
