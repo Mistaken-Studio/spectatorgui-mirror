@@ -88,7 +88,7 @@ namespace Mistaken.SpectatorGUI
             Exiled.Events.Handlers.Server.RestartingRound += this.Server_RestartingRound;
             Exiled.Events.Handlers.Server.RespawningTeam += this.Server_RespawningTeam;
             Exiled.Events.Handlers.Player.ChangingRole += this.Player_ChangingRole;
-            Exiled.Events.Handlers.Server.WaitingForPlayers += this.Server_WaitingForPlayers;
+            Events.Handlers.CustomEvents.LoadedPlugins -= this.CustomEvents_LoadedPlugins;
 
             this.active = true;
             Task.Run(async () =>
@@ -232,7 +232,7 @@ namespace Mistaken.SpectatorGUI
             Exiled.Events.Handlers.Server.RestartingRound -= this.Server_RestartingRound;
             Exiled.Events.Handlers.Server.RespawningTeam -= this.Server_RespawningTeam;
             Exiled.Events.Handlers.Player.ChangingRole -= this.Player_ChangingRole;
-            Exiled.Events.Handlers.Server.WaitingForPlayers -= this.Server_WaitingForPlayers;
+            Events.Handlers.CustomEvents.LoadedPlugins -= this.CustomEvents_LoadedPlugins;
 
             this.active = false;
         }
@@ -319,11 +319,10 @@ namespace Mistaken.SpectatorGUI
             this.roundStarted = true;
         }
 
-        private void Server_WaitingForPlayers()
+        private void CustomEvents_LoadedPlugins()
         {
             if(Exiled.Loader.Loader.Plugins.Any(x => x.Name == "BetterSCP-SCP049" && x.Config.IsEnabled))
                 _betterScp049Enabled = true;
-            Exiled.Events.Handlers.Server.WaitingForPlayers -= this.Server_WaitingForPlayers;
         }
 
         private IEnumerator<float> UpdateCache()
