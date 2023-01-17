@@ -1,38 +1,28 @@
-﻿// -----------------------------------------------------------------------
-// <copyright file="RespawnPatch.cs" company="Mistaken">
-// Copyright (c) Mistaken. All rights reserved.
-// </copyright>
-// -----------------------------------------------------------------------
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Emit;
-using HarmonyLib;
+﻿using HarmonyLib;
 using Respawning;
+using System.Collections.Generic;
+using System.Reflection.Emit;
 
-namespace Mistaken.SpectatorGUI
+namespace Mistaken.SpectatorGUI;
+
+[HarmonyPatch(typeof(RespawnManager), "Spawn")]
+internal static class RespawnPatch
 {
-    [HarmonyPatch(typeof(RespawnManager), "Spawn")]
-    internal static class RespawnPatch
+    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
     {
-#pragma warning disable IDE0051 // Usuń nieużywane prywatne składowe
-#pragma warning disable IDE0060 // Usuń nieużywany parametr
-        private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
-#pragma warning restore IDE0060 // Usuń nieużywany parametr
-#pragma warning restore IDE0051 // Usuń nieużywane prywatne składowe
+        List<CodeInstruction> newInstructions = NorthwoodLib.Pools.ListPool<CodeInstruction>.Shared.Rent(instructions);
+        int index = newInstructions.FindIndex((CodeInstruction i) => i.opcode == OpCodes.Ldloc_S) + 3;
+
+        newInstructions.RemoveAt(index);
+        newInstructions.InsertRange(index, new CodeInstruction[]
         {
-            List<CodeInstruction> newInstructions = NorthwoodLib.Pools.ListPool<CodeInstruction>.Shared.Rent(instructions);
-            int index = newInstructions.FindIndex((CodeInstruction i) => i.opcode == OpCodes.Stloc_3) + 1;
-            index = newInstructions.FindIndex(index, (CodeInstruction i) => i.opcode == OpCodes.Stloc_3) + 1;
-            newInstructions.RemoveAt(index + 12 + 4);
-            newInstructions.RemoveAt(index + 12 + 4);
-            for (int i = 0; i < newInstructions.Count; i++)
-                yield return newInstructions[i];
+            new(OpCodes.Ldsfld, AccessTools.Field(typeof(SpectatorInfoHandler), "_respawnQueueSeed")),
+            new(OpCodes.Call, AccessTools.Method(typeof(SpectatorInfoHandler), "ShuffleList").MakeGenericMethod(typeof(List<ReferenceHub>).MakeByRefType())),
+        });
 
-            NorthwoodLib.Pools.ListPool<CodeInstruction>.Shared.Return(newInstructions);
+        foreach (var instruction in newInstructions)
+            yield return instruction;
 
-            yield break;
-        }
+        NorthwoodLib.Pools.ListPool<CodeInstruction>.Shared.Return(newInstructions);
     }
 }

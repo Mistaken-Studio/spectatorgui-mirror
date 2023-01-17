@@ -1,23 +1,14 @@
-﻿using System.Linq;
-using Exiled.API.Features;
+﻿using PluginAPI.Core;
 
-namespace Mistaken.SpectatorGUI.Integrations
+namespace Mistaken.SpectatorGUI.Integrations;
+
+internal sealed class BetterSCP049Integration
 {
-    public class BetterSCP049Integration
-    {
-        /// <summary>
-        /// Checks if the integration is enabled.
-        /// </summary>
-        public static bool Enabled = false;
+    public static bool Enabled = false;
 
-        /// <summary>
-        /// Checks if the player is cuffed.
-        /// </summary>
-        /// <param name="player">player.</param>
-        /// <returns><see cref="bool"/>.</returns>
-        public static bool IsCuffed(Player player)
-        {
-            return Mistaken.BetterSCP.SCP049.Commands.DisarmCommand.DisarmedScps.ContainsValue(player);
-        }
+    public static bool IsCuffed(Player player)
+    {
+        return false;
+        // return Mistaken.BetterSCP.SCP049.Commands.DisarmCommand.DisarmedScps.ContainsValue(player);
     }
 }
