@@ -75,14 +75,14 @@ internal sealed class SpectatorInfoHandler
 
     public SpectatorInfoHandler()
     {
-        this._active = true;
+        _active = true;
         EventManager.RegisterEvents(this);
         Task.Run(UpdateTask);
     }
 
     ~SpectatorInfoHandler()
     {
-        this._active = false;
+        _active = false;
         EventManager.UnregisterEvents(this);
     }
 
@@ -118,13 +118,13 @@ internal sealed class SpectatorInfoHandler
 
     private async Task UpdateTask()
     {
-        while (this._active)
+        while (_active)
         {
             try
             {
                 await Task.Delay(1000);
 
-                if (!this._roundStarted)
+                if (!_roundStarted)
                     continue;
 
                 var spectators = Player.GetPlayers().Where(x => x.Role == RoleTypeId.Spectator || x.Role == RoleTypeId.Overwatch).ToArray();
@@ -138,7 +138,7 @@ internal sealed class SpectatorInfoHandler
                     var start = DateTime.UtcNow;
                     var respawnManager = RespawnManager.Singleton;
 
-                    var toRespawnList = Player.GetPlayers().Where(x => x.Role == RoleTypeId.Spectator && !x.IsOverwatchEnabled).ToArray();
+                    var toRespawnList = Player.GetPlayers().Where(x => x.Role == RoleTypeId.Spectator && x.Role != RoleTypeId.Overwatch).ToArray();
                     var toRespawn = toRespawnList.Count();
 
                     var respawningCI = Math.Min(Dynamic_maxRespawnCI, toRespawn);
@@ -149,7 +149,7 @@ internal sealed class SpectatorInfoHandler
 
                     var ttr = Mathf.RoundToInt(respawnManager._timeForNextSequence - (float)respawnManager._stopwatch.Elapsed.TotalSeconds);
 
-                    this.spawnQueue.Clear();
+                    spawnQueue.Clear();
                     if (respawnManager._curSequence == RespawnManager.RespawnSequencePhase.PlayingEntryAnimations)
                     {
                         if (RespawnManager.SpawnableTeams.TryGetValue(respawnManager.NextKnownTeam, out SpawnableTeamHandlerBase spawnableTeam))
@@ -173,7 +173,7 @@ internal sealed class SpectatorInfoHandler
                             {
                                 try
                                 {
-                                    this.spawnQueue.Add(player.PlayerId, (player, queue.Dequeue()));
+                                    spawnQueue.Add(player.PlayerId, (player, queue.Dequeue()));
                                 }
                                 catch
                                 {
@@ -184,8 +184,8 @@ internal sealed class SpectatorInfoHandler
                         }
                     }
 
-                    string message = this.PrepareInfoText(spectatorsCount, out string adminMessage);
-                    string respawnWaiting = this.InformRespawnWaiting(ttr);
+                    string message = PrepareInfoText(spectatorsCount, out string adminMessage);
+                    string respawnWaiting = InformRespawnWaiting(ttr);
                     string respawnMsg;
 
                     foreach (var player in spectators)
@@ -199,11 +199,11 @@ internal sealed class SpectatorInfoHandler
                                 InformRespawnSamsara(ttr, respawningMTF, notrespawningMTF, spawnQueue.ContainsKey(player.Id));
                             else */
                             if (respawnManager.NextKnownTeam == SpawnableTeamType.ChaosInsurgency)
-                                respawnMsg = this.InformRespawnCI(ttr, respawningCI, notrespawningCI, this.spawnQueue.ContainsKey(player.PlayerId) ? this.spawnQueue[player.PlayerId].Role : RoleTypeId.None);
+                                respawnMsg = InformRespawnCI(ttr, respawningCI, notrespawningCI, spawnQueue.ContainsKey(player.PlayerId) ? spawnQueue[player.PlayerId].Role : RoleTypeId.None);
                             else if (respawnManager.NextKnownTeam == SpawnableTeamType.NineTailedFox)
-                                respawnMsg = this.InformRespawnMTF(ttr, respawningMTF, notrespawningMTF, this.spawnQueue.ContainsKey(player.PlayerId) ? this.spawnQueue[player.PlayerId].Role : RoleTypeId.None, this.spawnQueue.FirstOrDefault(i => i.Value.Role == RoleTypeId.NtfCaptain).Value.Player?.DisplayNickname ?? "UNKNOWN");
+                                respawnMsg = InformRespawnMTF(ttr, respawningMTF, notrespawningMTF, spawnQueue.ContainsKey(player.PlayerId) ? spawnQueue[player.PlayerId].Role : RoleTypeId.None, spawnQueue.FirstOrDefault(i => i.Value.Role == RoleTypeId.NtfCaptain).Value.Player?.DisplayNickname ?? "UNKNOWN");
                             else
-                                respawnMsg = this.InformRespawnNone(ttr);
+                                respawnMsg = InformRespawnNone(ttr);
                         }
                         else
                             respawnMsg = respawnWaiting;
@@ -230,8 +230,8 @@ internal sealed class SpectatorInfoHandler
                             outputMessage += "<br><br>" + this.InformSpectating(GetSpectatedPlayer(player), false);
                         }*/
 
-                        outputMessage += this.InformTTR(message, respawnMsg, false, adminMessage);
-                        outputMessage += "<br><br>" + this.InformSpectating(GetSpectatedPlayer(player), false);
+                        outputMessage += InformTTR(message, respawnMsg, false, adminMessage);
+                        outputMessage += "<br><br>" + InformSpectating(GetSpectatedPlayer(player), false);
 
                         // player.ShowHint(message, 2);
                         if (player.IsAlive)
@@ -259,7 +259,7 @@ internal sealed class SpectatorInfoHandler
     [PluginEvent(ServerEventType.PlayerChangeRole)]
     private void OnPlayerChangeRole(Player player, PlayerRoleBase oldRole, RoleTypeId newRole, RoleChangeReason reason)
     {
-        if (newRole != RoleTypeId.Spectator)
+        if (newRole != RoleTypeId.Spectator && newRole != RoleTypeId.Overwatch)
         {
             player.SetGUI("specInfo", PseudoGUIPosition.MIDDLE, null);
             Timing.CallDelayed(1, () => player.SetGUI("specInfo", PseudoGUIPosition.MIDDLE, null));
@@ -286,16 +286,16 @@ internal sealed class SpectatorInfoHandler
     private void OnRoundRestart()
     {
         _respawnQueueSeed = -1;
-        this._roundStarted = false;
+        _roundStarted = false;
     }
 
     [PluginEvent(ServerEventType.RoundStart)]
     private void OnRoundStart()
     {
-        Timing.RunCoroutine(this.UpdateCache(), "UpdateCache");
+        Timing.RunCoroutine(UpdateCache(), nameof(UpdateCache));
         // Timing.CallDelayed(45, () => _is106 = Player.GetPlayers().Any(p => p.Role == RoleTypeId.Scp106));
 
-        this._roundStarted = true;
+        _roundStarted = true;
     }
 
     [PluginEvent(ServerEventType.WaitingForPlayers)]
@@ -354,7 +354,7 @@ internal sealed class SpectatorInfoHandler
     {
         var roundTimeString = string.Format(Plugin.Instance.Translation.RoundInfo, Round.Duration.Minutes.ToString("00"), Round.Duration.Seconds.ToString("00"));
         var specatorString = spectators < 2 ? Plugin.Instance.Translation.OnlySpectatorInfo : string.Format(Plugin.Instance.Translation.SpectatorInfo, spectators - 1);
-        var playersString = string.Format(Plugin.Instance.Translation.PlayersInfo, ReferenceHub.HubByPlayerIds.Count, CustomNetworkManager.slots);
+        var playersString = string.Format(Plugin.Instance.Translation.PlayersInfo, ServerConsole._playersAmount, CustomNetworkManager.slots);
         /*var generatorString = string.Format(Plugin.Instance.Translation.GeneratorInfo, Scp079Recontainer.AllGenerators.Where(x => x.Engaged).Count().ToString()) + (_cache_nearestGenerator == null ? string.Empty : $" (<color=yellow>{Math.Round((double)(_cache_nearestGenerator?.Network_syncTime ?? -1))}</color>s)");
         var overchargeString = string.Format(Plugin.Instance.Translation.OverchargeInfo, MapPlus.IsSCP079Recontained ? "<color=yellow>Recontained</color>" : "<color=yellow>Recontainment ready</color>");
         var genString = MapPlus.IsSCP079ReadyForRecontainment || MapPlus.IsSCP079Recontained ? overchargeString : generatorString;
