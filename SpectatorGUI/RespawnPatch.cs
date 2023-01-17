@@ -17,7 +17,7 @@ internal static class RespawnPatch
         newInstructions.InsertRange(index, new CodeInstruction[]
         {
             new(OpCodes.Ldsfld, AccessTools.Field(typeof(SpectatorInfoHandler), "_respawnQueueSeed")),
-            new(OpCodes.Call, AccessTools.Method(typeof(SpectatorInfoHandler), "ShuffleList").MakeGenericMethod(typeof(List<ReferenceHub>).MakeByRefType())),
+            new(OpCodes.Call, AccessTools.Method(typeof(SpectatorInfoHandler), "ShuffleList").MakeGenericMethod(typeof(ReferenceHub))),
         });
 
         foreach (var instruction in newInstructions)

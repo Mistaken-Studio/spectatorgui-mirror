@@ -100,7 +100,7 @@ internal sealed class SpectatorInfoHandler
     private static T GetSpectatedPlayer<T>(T player) where T : Player
         => player.ReferenceHub.roleManager.CurrentRole is SpectatorRole spectator ? Player.Get<T>(spectator.SyncedSpectatedNetId) : null;
 
-    private static void ShuffleList<T>(ref List<T> list, int seed)
+    private static void ShuffleList<T>(IList<T> list, int seed)
     {
         System.Random random = new(seed);
         int i = list.Count;
@@ -128,7 +128,7 @@ internal sealed class SpectatorInfoHandler
                     continue;
 
                 var spectators = Player.GetPlayers().Where(x => x.Role == RoleTypeId.Spectator).ToArray();
-                var spectatorsCount = spectators.Count();
+                var spectatorsCount = spectators.Length;
 
                 if (spectatorsCount == 0)
                     continue;
@@ -166,7 +166,7 @@ internal sealed class SpectatorInfoHandler
                             if (_respawnQueueSeed == -1)
                                 _respawnQueueSeed = UnityEngine.Random.Range(0, 10000);
 
-                            ShuffleList(ref list, _respawnQueueSeed);
+                            ShuffleList(list, _respawnQueueSeed);
                             Queue<RoleTypeId> queue = new();
                             spawnableTeam.GenerateQueue(queue, list.Count);
                             foreach (var player in list)
@@ -354,7 +354,7 @@ internal sealed class SpectatorInfoHandler
     {
         var roundTimeString = string.Format(Plugin.Instance.Translation.RoundInfo, Round.Duration.Minutes.ToString("00"), Round.Duration.Seconds.ToString("00"));
         var specatorString = spectators < 2 ? Plugin.Instance.Translation.OnlySpectatorInfo : string.Format(Plugin.Instance.Translation.SpectatorInfo, spectators - 1);
-        var playersString = string.Format(Plugin.Instance.Translation.PlayersInfo, PlayerList.instances.Count, CustomNetworkManager.slots);
+        var playersString = string.Format(Plugin.Instance.Translation.PlayersInfo, ReferenceHub.HubByPlayerIds.Count, CustomNetworkManager.slots);
         /*var generatorString = string.Format(Plugin.Instance.Translation.GeneratorInfo, Scp079Recontainer.AllGenerators.Where(x => x.Engaged).Count().ToString()) + (_cache_nearestGenerator == null ? string.Empty : $" (<color=yellow>{Math.Round((double)(_cache_nearestGenerator?.Network_syncTime ?? -1))}</color>s)");
         var overchargeString = string.Format(Plugin.Instance.Translation.OverchargeInfo, MapPlus.IsSCP079Recontained ? "<color=yellow>Recontained</color>" : "<color=yellow>Recontainment ready</color>");
         var genString = MapPlus.IsSCP079ReadyForRecontainment || MapPlus.IsSCP079Recontained ? overchargeString : generatorString;
