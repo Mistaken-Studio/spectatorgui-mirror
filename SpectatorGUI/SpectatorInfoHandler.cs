@@ -127,7 +127,7 @@ internal sealed class SpectatorInfoHandler
                 if (!this._roundStarted)
                     continue;
 
-                var spectators = Player.GetPlayers().Where(x => x.Role == RoleTypeId.Spectator).ToArray();
+                var spectators = Player.GetPlayers().Where(x => x.Role == RoleTypeId.Spectator || x.Role == RoleTypeId.Overwatch).ToArray();
                 var spectatorsCount = spectators.Length;
 
                 if (spectatorsCount == 0)
