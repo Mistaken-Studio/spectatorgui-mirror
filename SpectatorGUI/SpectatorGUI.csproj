@@ -40,6 +40,7 @@
   <ItemGroup>
     <Reference Include="0Harmony" HintPath="$(MISTAKEN_REFERENCES)\0Harmony.dll" />
     <Reference Include="PluginAPI" HintPath="$(MISTAKEN_REFERENCES)\PluginAPI.dll" />
+    <Reference Include="Pooling" HintPath="$(MISTAKEN_REFERENCES)\Pooling.dll" />
     <Reference Include="Mistaken.PseudoGUI" HintPath="$(MISTAKEN_REFERENCES)\Mistaken.PseudoGUI.dll" />
     <Reference Include="NorthwoodLib" HintPath="$(MISTAKEN_REFERENCES)\NorthwoodLib.dll" />
     <Reference Include="CommandSystem.Core" HintPath="$(MISTAKEN_REFERENCES)\CommandSystem.Core.dll" />
@@ -57,13 +58,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Integrations\BetterSCP049Integration.cs" />
     <Compile Include="RespawnPatch.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SpectatorInfoHandler.cs" />
-    <Compile Include="Translation.cs" />
+    <Compile Include="Translations.cs" />
   </ItemGroup>
   <ItemGroup>
     <Analyzer Include="..\packages\StyleCop.Analyzers.1.1.118\analyzers\dotnet\cs\StyleCop.Analyzers.CodeFixes.dll" />

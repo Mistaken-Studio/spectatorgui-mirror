@@ -9,17 +9,17 @@ internal sealed class Plugin
     public static Plugin Instance { get; private set; }
 
     [PluginConfig]
-    public Config Config;
+    public static Config Config;
 
-    public Translation Translation;
+    public static Translations Translations;
 
     [PluginPriority(LoadPriority.Medium)]
-    [PluginEntryPoint("Spectator GUI", "1.0.0", "", "Mistaken Devs")]
+    [PluginEntryPoint("Spectator GUI", "1.0.0", "Spectator GUI", "Mistaken Devs")]
     private void Load()
     {
         Instance = this;
         _harmony.PatchAll();
-        Translation = new();
+        Translations = new();
 
         new SpectatorInfoHandler();
     }
@@ -30,5 +30,5 @@ internal sealed class Plugin
         _harmony.UnpatchAll();
     }
 
-    private static readonly Harmony _harmony = new("mistaken.spectatrgui");
+    private static readonly Harmony _harmony = new("mistaken.spectatorgui");
 }
