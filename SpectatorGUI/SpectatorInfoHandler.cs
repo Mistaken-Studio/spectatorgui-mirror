@@ -53,7 +53,6 @@ internal sealed class SpectatorInfoHandler
     private static readonly RespawnTokensManager.TokenCounter _counterCI = RespawnTokensManager.Counters.First(x => x.Team == SpawnableTeamType.ChaosInsurgency);
     private static readonly RespawnTokensManager.TokenCounter _counterNTF = RespawnTokensManager.Counters.First(x => x.Team == SpawnableTeamType.NineTailedFox);
     private static MapGeneration.Distributors.Scp079Generator _cache_nearestGenerator;
-    private static int _seed = -1;
 
     private static float Dynamic_maxRespawnCI => Mathf.Min(_counterCI.Handler.MaxWaveSize, _counterCI.Amount == 0 ? 5 : _counterCI.Amount);
 
@@ -62,17 +61,7 @@ internal sealed class SpectatorInfoHandler
     private static T GetSpectatedPlayer<T>(T player) where T : Player
         => player.ReferenceHub.roleManager.CurrentRole is SpectatorRole spectator ? Player.Get<T>(spectator.SyncedSpectatedNetId) : null;
 
-    private static void ShuffleList<T>(IList<T> list, int seed)
-    {
-        System.Random random = new(seed);
-        int i = list.Count;
-        while (i > 1)
-        {
-            i--;
-            int index = random.Next(i + 1);
-            (list[i], list[index]) = (list[index], list[i]);
-        }
-    }
+    
 
     private bool _active;
     private bool _roundStarted;
@@ -88,10 +77,9 @@ internal sealed class SpectatorInfoHandler
                 if (!_roundStarted)
                     continue;
 
-                var spectators = Player.GetPlayers().Where(x => x.Role == RoleTypeId.Spectator || x.Role == RoleTypeId.Overwatch).ToArray();
-                var spectatorsCount = spectators.Length;
+                var spectators = Player.GetPlayers().Where(x => x.RoleBase is SpectatorRole).ToArray();
 
-                if (spectatorsCount == 0)
+                if (spectators.Length == 0)
                     continue;
 
                 try
@@ -111,7 +99,6 @@ internal sealed class SpectatorInfoHandler
                     var ttr = Mathf.RoundToInt(respawnManager._timeForNextSequence - (float)respawnManager._stopwatch.Elapsed.TotalSeconds);
 
                     _spawnQueue.Clear();
-                    RespawnPatch.PlayersToSpawn.Clear();
                     if (respawnManager._curSequence == RespawnManager.RespawnSequencePhase.PlayingEntryAnimations)
                     {
                         if (RespawnManager.SpawnableTeams.TryGetValue(respawnManager.NextKnownTeam, out SpawnableTeamHandlerBase spawnableTeam))
@@ -124,15 +111,14 @@ internal sealed class SpectatorInfoHandler
                                 num = maxWaveSize;
                             }
 
-                            if (_seed == -1)
-                                _seed = UnityEngine.Random.Range(0, int.MaxValue);
+                            if (RespawnPatch.Seed == -1)
+                                RespawnPatch.Seed = UnityEngine.Random.Range(0, int.MaxValue);
 
                             if (RespawnManager.Singleton._prioritySpawn)
                                 RespawnList = RespawnList.OrderByDescending(x => x.roleManager.CurrentRole.ActiveTime).ToList();
                             else
-                                ShuffleList(RespawnList, _seed);
+                                RespawnPatch.ShuffleList(RespawnList, RespawnPatch.Seed);
 
-                            RespawnPatch.PlayersToSpawn = RespawnList;
                             Queue<RoleTypeId> queue = new();
                             spawnableTeam.GenerateQueue(queue, RespawnCount);
 
@@ -141,7 +127,7 @@ internal sealed class SpectatorInfoHandler
                         }
                     }
 
-                    string message = PrepareInfoText(spectatorsCount, out string adminMessage);
+                    string message = PrepareInfoText(spectators.Length, out string adminMessage);
                     string respawnWaiting = InformRespawnWaiting(ttr);
                     string respawnMsg;
 
@@ -208,13 +194,13 @@ internal sealed class SpectatorInfoHandler
             }
         }
 
-        Timing.CallDelayed(20, () => _seed = -1);
+        Timing.CallDelayed(20, () => RespawnPatch.Seed = -1);
     }
 
     [PluginEvent(ServerEventType.RoundRestart)]
     private void OnRoundRestart()
     {
-        _seed = -1;
+        RespawnPatch.Seed = -1;
         _roundStarted = false;
     }
 
